@@ -15,9 +15,21 @@ public sealed class ScreenDevice : IDisposable
 
     private readonly ScreenConnection _connection;
 
-    public ScreenDevice(string portName = "/dev/ttyACM0")
+    public ScreenDevice(string portName)
     {
         _connection = new ScreenConnection(portName);
+    }
+
+    /// <summary>
+    /// Creates a ScreenDevice by auto-detecting the USB screen via sysfs.
+    /// Throws if the screen is not found.
+    /// </summary>
+    public static ScreenDevice AutoDetect()
+    {
+        var port = DeviceScanner.FindScreen()
+            ?? throw new InvalidOperationException(
+                "Screen not found. Is it connected? Check VID 1a86, PID 5722 with 'lsusb'.");
+        return new ScreenDevice(port);
     }
 
     /// <summary>

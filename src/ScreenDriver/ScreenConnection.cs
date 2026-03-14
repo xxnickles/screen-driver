@@ -10,7 +10,7 @@ public sealed class ScreenConnection : IDisposable
 {
     private readonly SerialPort _port;
 
-    public ScreenConnection(string portName = "/dev/ttyACM0")
+    public ScreenConnection(string portName)
     {
         _port = new SerialPort(portName)
         {

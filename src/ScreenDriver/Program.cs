@@ -4,11 +4,11 @@ using ScreenDriver;
 // This is the simplest possible test — if the screen turns red, we know
 // the protocol, serial connection, and RGB565 encoding all work correctly.
 
-var portName = args.Length > 0 ? args[0] : "/dev/ttyACM0";
+using var screen = args.Length > 0
+    ? new ScreenDevice(args[0])
+    : ScreenDevice.AutoDetect();
 
-Console.WriteLine($"Opening connection to {portName}...");
-
-using var screen = new ScreenDevice(portName);
+Console.WriteLine($"Opening connection to screen...");
 var sizeId = screen.Initialize();
 Console.WriteLine($"Screen responded with size ID: 0x{sizeId:X2} ({sizeId})");
 

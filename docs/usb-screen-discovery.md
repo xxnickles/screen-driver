@@ -119,3 +119,82 @@ sudo usermod -aG dialout $USER
 | Communication | Serial @ 115200 baud, RTS/CTS | Known from protocol docs |
 
 With this information, we know exactly how to talk to the screen from code: open `/dev/ttyACM0` as a serial port at 115200 baud and send Revision A commands.
+
+## Step 5: Programmatic auto-discovery via sysfs
+
+The steps above use CLI tools (`lsusb`, `udevadm`) — great for humans, but our .NET
+driver needs to find the screen automatically. On Linux, all USB device metadata is
+exposed through **sysfs**, a virtual filesystem at `/sys/` that the kernel populates.
+No sudo required — it's world-readable.
+
+### Where the data lives
+
+Every USB device gets a directory under `/sys/bus/usb/devices/`. The directory name
+encodes the physical topology (bus-port), but we don't need to understand that — we
+just scan all of them.
+
+```
+/sys/bus/usb/devices/
+  ├── 1-11/           ← some other device
+  ├── 5-1/            ← our screen
+  ├── 5-3/            ← some other device
+  └── ...
+```
+
+### What's inside a device directory
+
+Each device directory contains plain text files with USB metadata:
+
+```bash
+cat /sys/bus/usb/devices/5-1/idVendor     # → 1a86
+cat /sys/bus/usb/devices/5-1/idProduct     # → 5722
+cat /sys/bus/usb/devices/5-1/serial        # → USB35INCHIPSV2
+cat /sys/bus/usb/devices/5-1/product       # → UsbMonitor
+cat /sys/bus/usb/devices/5-1/manufacturer  # → 2017-2-25
+```
+
+These are the same values we found with `lsusb` and `udevadm`, just exposed as files
+that any program can read.
+
+### How to find the serial port name
+
+The device directory also contains subdirectories for each USB **interface** the device
+exposes. The serial interface contains a `tty/` folder with the port name:
+
+```
+/sys/bus/usb/devices/5-1/              ← the USB device
+  ├── idVendor      → "1a86"           ← identify by this
+  ├── idProduct     → "5722"           ← and this
+  ├── serial        → "USB35INCHIPSV2"
+  ├── 5-1:1.0/                         ← interface 0 (serial)
+  │     └── tty/
+  │           └── ttyACM0/             ← port name!
+  └── 5-1:1.1/                         ← interface 1 (not serial)
+```
+
+The folder name inside `tty/` is the port name. Prepend `/dev/` to get the device path:
+`ttyACM0` → `/dev/ttyACM0`.
+
+### The auto-discovery algorithm
+
+```
+1. List all directories in /sys/bus/usb/devices/
+2. For each directory:
+   a. Read idVendor — skip if not "1a86"
+   b. Read idProduct — skip if not "5722"
+   c. Search for a "tty" subdirectory anywhere under this device
+   d. Read the first entry inside tty/ — that's the port name
+3. Return "/dev/{port name}" or null if no match found
+```
+
+### Where VID and PID come from
+
+The VID (Vendor ID) and PID (Product ID) are not something we chose — they are
+**burned into the USB chip by the manufacturer**. Every USB device in the world reports
+a VID/PID pair when plugged in. The USB Implementers Forum (USB-IF) assigns unique
+vendor IDs to companies, and each company assigns product IDs to their devices.
+
+We learned our screen's VID/PID in Step 1 using `lsusb`. The Python reference project
+[turing-smart-screen-python](https://github.com/mathoudebine/turing-smart-screen-python)
+confirmed these values in its auto-detection code, which checks for `VID=0x1a86,
+PID=0x5722` and serial string `USB35INCHIPSV2`.
