@@ -1,31 +1,71 @@
 using ScreenDriver;
-
-// Proof of concept: connect to the screen and fill it with a solid color.
-// This is the simplest possible test — if the screen turns red, we know
-// the protocol, serial connection, and RGB565 encoding all work correctly.
+using ScreenDriver.Queue;
+using ScreenDriver.Scheduler;
+using ScreenDriver.Stats;
+using ScreenDriver.Widgets;
+using SkiaSharp;
 
 using var screen = args.Length > 0
     ? new ScreenDevice(args[0])
     : ScreenDevice.AutoDetect();
 
-Console.WriteLine($"Opening connection to screen...");
+Console.WriteLine("Opening connection to screen...");
 var sizeId = screen.Initialize();
 Console.WriteLine($"Screen responded with size ID: 0x{sizeId:X2} ({sizeId})");
 
-screen.SetBrightness(0); // Max brightness
-screen.SetOrientation(0); // Portrait
+screen.SetBrightness(0);
+screen.SetOrientation(ScreenOrientation.Landscape);
 
-Console.WriteLine("Filling screen with red...");
-screen.FillScreen(255, 0, 0);
-Console.WriteLine("Done! Screen should now be solid red.");
+Console.WriteLine("Filling screen with black...");
+screen.FillScreen(0, 0, 0);
 
-Console.WriteLine("Press Enter to fill with blue, or Ctrl+C to exit.");
-Console.ReadLine();
+// Take a baseline CPU reading so the first real render has a delta
+CpuStats.GetUsagePercent();
 
-screen.FillScreen(0, 0, 255);
-Console.WriteLine("Screen should now be solid blue.");
+var queue = new ScreenWriteQueue(screen);
+using var cts = new CancellationTokenSource();
+queue.StartAsync(cts.Token);
 
-Console.WriteLine("Press Enter to turn off screen and exit.");
-Console.ReadLine();
+Widget[] widgets =
+[
+    new TextWidget(
+        new WidgetZone(0, 0, 320, 70),
+        TimeSpan.FromSeconds(2),
+        () => $"CPU: {CpuStats.GetUsagePercent():F0}%",
+        SKColors.Black, SKColors.White, 24f),
 
+    new BarWidget(
+        new WidgetZone(0, 80, 320, 70),
+        TimeSpan.FromSeconds(5),
+        () => MemoryStats.GetUsagePercent().UsedPercent,
+        SKColors.DarkSlateGray, SKColors.DodgerBlue, SKColors.White, 20f),
+
+    new TextWidget(
+        new WidgetZone(0, 150, 320, 60),
+        TimeSpan.FromSeconds(5),
+        () =>
+        {
+            var (_, totalMb, usedMb) = MemoryStats.GetUsagePercent();
+            return $"Mem: {usedMb}MB / {totalMb}MB";
+        },
+        SKColors.Black, SKColors.White, 18f),
+];
+
+var scheduler = new WidgetScheduler(queue, widgets);
+scheduler.StartAsync(cts.Token);
+
+Console.WriteLine("Widgets running. Press Ctrl+C to exit.");
+
+var tcs = new TaskCompletionSource();
+Console.CancelKeyPress += (_, e) =>
+{
+    e.Cancel = true;
+    tcs.TrySetResult();
+};
+await tcs.Task;
+
+Console.WriteLine("Shutting down...");
+await scheduler.StopAsync();
+await queue.StopAsync();
 screen.ScreenOff();
+Console.WriteLine("Done.");

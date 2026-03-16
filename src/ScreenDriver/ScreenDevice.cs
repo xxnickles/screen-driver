@@ -1,6 +1,9 @@
 using ScreenDriver.Protocol;
+using ScreenDriver.Widgets;
 
 namespace ScreenDriver;
+
+public enum ScreenOrientation { Portrait, Landscape, ReversePortrait, ReverseLandscape }
 
 /// <summary>
 /// High-level API for the UsbMonitor 3.5" Revision A screen.
@@ -62,7 +65,7 @@ public sealed class ScreenDevice : IDisposable
     /// <summary>
     /// Sets orientation: 0=portrait, 1=landscape, 2=reverse portrait, 3=reverse landscape.
     /// </summary>
-    public void SetOrientation(int orientation) => _connection.Write(ScreenCommand.BuildSetOrientation(orientation));
+    public void SetOrientation(ScreenOrientation orientation) => _connection.Write(ScreenCommand.BuildSetOrientation((int)orientation));
 
     /// <summary>
     /// Sends RGB565 pixel data to a rectangular region of the screen.
@@ -78,8 +81,8 @@ public sealed class ScreenDevice : IDisposable
     /// </summary>
     public void FillScreen(byte r, byte g, byte b)
     {
-        var data = Rgb565Encoder.SolidColor(Width, Height, r, g, b);
-        DisplayBitmap(0, 0, Width - 1, Height - 1, data);
+        var frame = Rgb565Frame.SolidColor(Width, Height, r, g, b);
+        DisplayBitmap(0, 0, Width - 1, Height - 1, frame.Data);
     }
 
     public void Dispose() => _connection.Dispose();
