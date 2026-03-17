@@ -14,6 +14,8 @@ Serial communication is the simplest way two devices can talk: one sends bytes, 
 
 Every command to the screen is exactly **6 bytes**. The first 5 bytes encode coordinates (a rectangular region on screen), and the 6th byte is the command code.
 
+> **Exception: SET_ORIENTATION is 16 bytes.** The first 6 bytes follow the standard layout, but the command is followed by 10 additional bytes carrying the orientation value and target display dimensions. See [SET_ORIENTATION packet](#set_orientation-packet) below.
+
 ### Coordinate encoding
 
 The screen is 320×480 pixels. Commands often need to specify a rectangle: "from point (x, y) to point (ex, ey)." These four numbers are packed tightly into 5 bytes using bit manipulation:
@@ -40,7 +42,7 @@ For commands that don't use coordinates (like brightness), the coordinate bytes 
 | SCREEN_OFF | 108 (0x6C) | Unused | Turns the backlight off. |
 | SCREEN_ON | 109 (0x6D) | Unused | Turns the backlight on. |
 | SET_BRIGHTNESS | 110 (0x6E) | x = brightness level | **Inverted scale:** 0 = maximum brightness, 255 = completely dark. |
-| SET_ORIENTATION | 121 (0x79) | x = orientation + 100 | Values: 100=portrait, 101=landscape, 102=reverse portrait, 103=reverse landscape. |
+| SET_ORIENTATION | 121 (0x79) | Coordinates zeroed | **16-byte packet** (not 6). Orientation and display dimensions follow in bytes 6–15. See SET_ORIENTATION packet section. |
 | DISPLAY_BITMAP | 197 (0xC5) | (x, y) to (ex, ey) | Defines the rectangle where the following image data will be drawn. |
 
 ### HELLO handshake
@@ -57,6 +59,38 @@ Receive: one byte identifying the screen size
 | 0x01 or 'C' | 3.5" (320×480) |
 | 0x02 or 'E' | 5" (480×800) |
 | 0x03 or 'G' | 7" (600×1024) |
+
+### SET_ORIENTATION packet
+
+SET_ORIENTATION is the one command that breaks the 6-byte rule. It sends **16 bytes total**: the standard 6-byte header followed by 10 bytes of orientation data.
+
+```
+Byte  0:  0x00   (x >> 2 — coordinates zeroed)
+Byte  1:  0x00   ((x & 3) << 6 | y >> 4 — coordinates zeroed)
+Byte  2:  0x00   ((y & 15) << 4 | ex >> 6 — coordinates zeroed)
+Byte  3:  0x00   ((ex & 63) << 2 | ey >> 8 — coordinates zeroed)
+Byte  4:  0x00   (ey & 255 — coordinates zeroed)
+Byte  5:  0x79   SET_ORIENTATION command code
+Byte  6:  orientation value + 100   (see table below)
+Byte  7:  width high byte           (target display width, big-endian)
+Byte  8:  width low byte
+Byte  9:  height high byte          (target display height, big-endian)
+Byte 10:  height low byte
+Bytes 11–15: 0x00 (unused)
+```
+
+**Why width and height?** When you rotate the screen, the firmware remaps the entire coordinate system to the new dimensions. By including the target width and height in the packet, you tell the firmware what to map to. After sending SET_ORIENTATION, all subsequent DISPLAY_BITMAP coordinates should use the new dimensions — not the physical defaults.
+
+For example, switching a 320×480 screen to landscape means width becomes 480 and height becomes 320. A full-screen DISPLAY_BITMAP after that uses `(x=0, y=0, ex=479, ey=319)`.
+
+#### Orientation values
+
+| Enum value | Firmware byte (value + 100) | Orientation |
+|---|---|---|
+| 0 | 100 | Portrait |
+| 1 | 101 | Reverse Portrait |
+| 2 | 102 | Landscape |
+| 3 | 103 | Reverse Landscape |
 
 ## Sending an image
 
@@ -146,11 +180,21 @@ x=0, y=0, ex=0, ey=0, cmd=110
 → [0x00, 0x00, 0x00, 0x00, 0x00, 0x6E]
 ```
 
-**Set orientation to landscape:**
+**Set orientation to landscape (3.5" screen, width=480, height=320):**
 ```
-x=101, y=0, ex=0, ey=0, cmd=121
-→ [0x19, 0x40, 0x00, 0x00, 0x00, 0x79]
-  (0x19 = 101 >> 2 = 25, 0x40 = (101 & 3) << 6 = 1 << 6 = 64)
+16-byte packet:
+  Bytes 0–5  (6-byte header, coordinates zeroed, command 0x79):
+    [0x00, 0x00, 0x00, 0x00, 0x00, 0x79]
+  Byte  6    (orientation value 2 + 100 = 102 = 0x66):
+    [0x66]
+  Bytes 7–8  (width 480 = 0x01E0, big-endian):
+    [0x01, 0xE0]
+  Bytes 9–10 (height 320 = 0x0140, big-endian):
+    [0x01, 0x40]
+  Bytes 11–15 (unused):
+    [0x00, 0x00, 0x00, 0x00, 0x00]
+
+Full packet: [0x00, 0x00, 0x00, 0x00, 0x00, 0x79, 0x66, 0x01, 0xE0, 0x01, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00]
 ```
 
 **Display full-screen bitmap:**

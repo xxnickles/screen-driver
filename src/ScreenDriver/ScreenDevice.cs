@@ -3,20 +3,35 @@ using ScreenDriver.Widgets;
 
 namespace ScreenDriver;
 
-public enum ScreenOrientation { Portrait, Landscape, ReversePortrait, ReverseLandscape }
+public enum ScreenOrientation
+{
+    Portrait = 0,
+    ReversePortrait = 1,
+    Landscape = 2,
+    ReverseLandscape = 3
+}
 
 /// <summary>
 /// High-level API for the UsbMonitor 3.5" Revision A screen.
 /// </summary>
 public sealed class ScreenDevice : IDisposable
 {
-    public const int Width = 320;
-    public const int Height = 480;
+    public const int NativeWidth = 320;
+    public const int NativeHeight = 480;
 
-    // Chunk size for image data: width * 8 bytes (4 rows of pixels at 2 bytes/pixel)
-    private const int ImageChunkSize = Width * 8;
+    // Chunk size: always based on native portrait width
+    private const int ImageChunkSize = NativeWidth * 8;
 
     private readonly ScreenConnection _connection;
+    private ScreenOrientation _orientation = ScreenOrientation.Portrait;
+
+    /// <summary>Effective width after orientation is applied.</summary>
+    public int Width => IsLandscape ? NativeHeight : NativeWidth;
+
+    /// <summary>Effective height after orientation is applied.</summary>
+    public int Height => IsLandscape ? NativeWidth : NativeHeight;
+
+    private bool IsLandscape => _orientation is ScreenOrientation.Landscape or ScreenOrientation.ReverseLandscape;
 
     public ScreenDevice(string portName)
     {
@@ -63,9 +78,14 @@ public sealed class ScreenDevice : IDisposable
     public void SetBrightness(byte level) => _connection.Write(ScreenCommand.BuildSetBrightness(level));
 
     /// <summary>
-    /// Sets orientation: 0=portrait, 1=landscape, 2=reverse portrait, 3=reverse landscape.
+    /// Sets orientation. Sends the full 16-byte command with target dimensions.
+    /// The firmware handles coordinate remapping — no software rotation needed.
     /// </summary>
-    public void SetOrientation(ScreenOrientation orientation) => _connection.Write(ScreenCommand.BuildSetOrientation((int)orientation));
+    public void SetOrientation(ScreenOrientation orientation)
+    {
+        _orientation = orientation;
+        _connection.Write(ScreenCommand.BuildSetOrientation((int)orientation, Width, Height));
+    }
 
     /// <summary>
     /// Sends RGB565 pixel data to a rectangular region of the screen.

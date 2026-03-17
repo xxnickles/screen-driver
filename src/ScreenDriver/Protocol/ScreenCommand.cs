@@ -44,11 +44,27 @@ public static class ScreenCommand
     public static byte[] BuildSetBrightness(byte level) => Encode(level, 0, 0, 0, SetBrightness);
 
     /// <summary>
-    /// Builds a SET_ORIENTATION packet.
-    /// 0=portrait, 1=landscape, 2=reverse portrait, 3=reverse landscape.
-    /// The protocol adds 100 to the value.
+    /// Builds a 16-byte SET_ORIENTATION packet.
+    /// Bytes 0-5: standard command (coords zeroed + command code).
+    /// Byte 6: orientation + 100.
+    /// Bytes 7-10: target width and height (big-endian).
     /// </summary>
-    public static byte[] BuildSetOrientation(int orientation) => Encode(orientation + 100, 0, 0, 0, SetOrientation);
+    public static byte[] BuildSetOrientation(int orientation, int width, int height)
+    {
+        var buf = new byte[16];
+        // Bytes 0-4: packed coordinates (all zero)
+        // Byte 5: command code
+        buf[5] = SetOrientation;
+        // Byte 6: orientation value
+        buf[6] = (byte)(orientation + 100);
+        // Bytes 7-8: width (big-endian)
+        buf[7] = (byte)(width >> 8);
+        buf[8] = (byte)(width & 0xFF);
+        // Bytes 9-10: height (big-endian)
+        buf[9] = (byte)(height >> 8);
+        buf[10] = (byte)(height & 0xFF);
+        return buf;
+    }
 
     /// <summary>
     /// Builds a DISPLAY_BITMAP command defining the target rectangle.

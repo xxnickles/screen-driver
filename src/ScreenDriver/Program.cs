@@ -26,22 +26,24 @@ var queue = new ScreenWriteQueue(screen);
 using var cts = new CancellationTokenSource();
 queue.StartAsync(cts.Token);
 
+var w = screen.Width;
+
 Widget[] widgets =
 [
     new TextWidget(
-        new WidgetZone(0, 0, 320, 70),
+        new WidgetZone(0, 0, w, 70),
         TimeSpan.FromSeconds(2),
         () => $"CPU: {CpuStats.GetUsagePercent():F0}%",
         SKColors.Black, SKColors.White, 24f),
 
     new BarWidget(
-        new WidgetZone(0, 80, 320, 70),
+        new WidgetZone(0, 80, w, 70),
         TimeSpan.FromSeconds(5),
         () => MemoryStats.GetUsagePercent().UsedPercent,
         SKColors.DarkSlateGray, SKColors.DodgerBlue, SKColors.White, 20f),
 
     new TextWidget(
-        new WidgetZone(0, 150, 320, 60),
+        new WidgetZone(0, 150, w, 60),
         TimeSpan.FromSeconds(5),
         () =>
         {
