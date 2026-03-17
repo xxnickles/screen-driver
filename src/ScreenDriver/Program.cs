@@ -1,32 +1,16 @@
 using ScreenDriver;
-using ScreenDriver.Queue;
-using ScreenDriver.Scheduler;
 using ScreenDriver.Stats;
 using ScreenDriver.Widgets;
 using SkiaSharp;
 
-using var screen = args.Length > 0
-    ? new ScreenDevice(args[0])
-    : ScreenDevice.AutoDetect();
-
-Console.WriteLine("Opening connection to screen...");
-var sizeId = screen.Initialize();
-Console.WriteLine($"Screen responded with size ID: 0x{sizeId:X2} ({sizeId})");
-
-screen.SetBrightness(0);
-screen.SetOrientation(ScreenOrientation.Landscape);
-
-Console.WriteLine("Filling screen with black...");
-screen.FillScreen(0, 0, 0);
-
 // Take a baseline CPU reading so the first real render has a delta
 CpuStats.GetUsagePercent();
 
-var queue = new ScreenWriteQueue(screen);
-using var cts = new CancellationTokenSource();
-queue.StartAsync(cts.Token);
+var port = args.Length > 0 ? args[0] : null;
 
-var w = screen.Width;
+// Widget width adapts to orientation (480 for landscape, 320 for portrait)
+// set inside ScreenController after orientation is applied.
+var w = ScreenDevice.NativeHeight; // landscape width
 
 Widget[] widgets =
 [
@@ -53,21 +37,24 @@ Widget[] widgets =
         SKColors.Black, SKColors.White, 18f),
 ];
 
-var scheduler = new WidgetScheduler(queue, widgets);
-scheduler.StartAsync(cts.Token);
+await using var controller = new ScreenController(widgets, port);
 
-Console.WriteLine("Widgets running. Press Ctrl+C to exit.");
-
-var tcs = new TaskCompletionSource();
+using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) =>
 {
     e.Cancel = true;
-    tcs.TrySetResult();
+    cts.Cancel();
 };
-await tcs.Task;
+
+await controller.StartAsync(cts.Token);
+Console.WriteLine("Press Ctrl+C to exit.");
+
+try
+{
+    await Task.Delay(Timeout.Infinite, cts.Token);
+}
+catch (OperationCanceledException) { }
 
 Console.WriteLine("Shutting down...");
-await scheduler.StopAsync();
-await queue.StopAsync();
-screen.ScreenOff();
+await controller.StopAsync();
 Console.WriteLine("Done.");

@@ -1,23 +1,31 @@
-using ScreenDriver.Queue;
 using ScreenDriver.Widgets;
 
 namespace ScreenDriver.Scheduler;
 
 /// <summary>
-/// Runs a PeriodicTimer per widget, rendering and enqueuing frames at each widget's interval.
+/// Runs a PeriodicTimer per widget, rendering frames at each widget's interval.
+/// Fires FrameRendered when a widget produces a new frame.
+/// Supports pause/resume for disconnect handling — timers keep running but renders are skipped.
 /// </summary>
 public sealed class WidgetScheduler
 {
-    private readonly ScreenWriteQueue _queue;
     private readonly IEnumerable<Widget> _widgets;
     private readonly List<Task> _tasks = [];
     private CancellationTokenSource? _cts;
+    private volatile bool _paused;
 
-    public WidgetScheduler(ScreenWriteQueue queue, IEnumerable<Widget> widgets)
+    /// <summary>
+    /// Raised when a widget produces a new frame.
+    /// </summary>
+    public event Action<WidgetZone, Rgb565Frame>? FrameRendered;
+
+    public WidgetScheduler(IEnumerable<Widget> widgets)
     {
-        _queue = queue;
         _widgets = widgets;
     }
+
+    public void Pause() => _paused = true;
+    public void Resume() => _paused = false;
 
     public void StartAsync(CancellationToken ct)
     {
@@ -42,24 +50,26 @@ public sealed class WidgetScheduler
         using var timer = new PeriodicTimer(widget.Interval);
 
         // Render immediately on first tick
-        EnqueueRender(widget);
+        EmitRender(widget);
 
         try
         {
             while (await timer.WaitForNextTickAsync(ct))
             {
-                EnqueueRender(widget);
+                EmitRender(widget);
             }
         }
         catch (OperationCanceledException) { }
     }
 
-    private void EnqueueRender(Widget widget)
+    private void EmitRender(Widget widget)
     {
+        if (_paused) return;
+
         try
         {
             var frame = widget.Render();
-            _queue.Enqueue(new WriteRequest(widget.Zone, frame));
+            FrameRendered?.Invoke(widget.Zone, frame);
         }
         catch (Exception ex)
         {
