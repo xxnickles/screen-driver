@@ -70,7 +70,7 @@ public static class GpuStats
         const string drmPath = "/sys/class/drm";
         if (!Directory.Exists(drmPath)) return;
 
-        foreach (var cardDir in Directory.GetDirectories(drmPath, "card[0-9]*"))
+        foreach (var cardDir in Directory.GetDirectories(drmPath, "card*"))
         {
             var usagePath = Path.Combine(cardDir, "device", "gpu_busy_percent");
             if (!File.Exists(usagePath)) continue;
