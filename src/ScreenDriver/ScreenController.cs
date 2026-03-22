@@ -16,13 +16,15 @@ public sealed class ScreenController : IAsyncDisposable
     private readonly string? _fixedPort;
     private readonly ScreenCommandQueue _queue;
     private readonly WidgetScheduler _scheduler;
+    private readonly BackgroundWidget? _background;
     private CancellationTokenSource? _cts;
     private ScreenDevice? _device;
     private volatile bool _reconnecting;
 
-    public ScreenController(IEnumerable<Widget> widgets, string? port = null)
+    public ScreenController(IEnumerable<Widget> widgets, string? port = null, BackgroundWidget? background = null)
     {
         _fixedPort = port;
+        _background = background;
         _queue = new ScreenCommandQueue(() => _device, OnDisconnect);
         _scheduler = new WidgetScheduler(widgets);
         _scheduler.FrameRendered += (zone, frame) =>
@@ -94,17 +96,27 @@ public sealed class ScreenController : IAsyncDisposable
                     device.FillScreen(0, 0, 0);
 
                     _device = device;
+                    SendBackground();
                     return;
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine($"Failed to initialize screen on {port}: {ex.Message}");
+                    await Console.Error.WriteLineAsync($"Failed to initialize screen on {port}: {ex.Message}");
                 }
             }
 
             Console.WriteLine("Screen not found, retrying in 5 seconds...");
             await Task.Delay(ReconnectInterval, ct);
         }
+    }
+
+    private void SendBackground()
+    {
+        if (_background is null || _device is null) return;
+
+        var frame = _background.Render();
+        var zone = _background.Zone;
+        _device.DisplayBitmap(zone.X, zone.Y, zone.EndX, zone.EndY, frame.Data);
     }
 
     private void OnDisconnect()

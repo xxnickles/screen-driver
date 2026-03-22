@@ -1,5 +1,5 @@
-using System.Text;
 using ScreenDriver;
+using ScreenDriver.Meters;
 using ScreenDriver.Stats;
 using ScreenDriver.Widgets;
 using SkiaSharp;
@@ -8,73 +8,52 @@ using SkiaSharp;
 CpuStats.GetUsagePercent();
 
 var port = args.Length > 0 ? args[0] : null;
+var backgroundPath = Path.GetFullPath(
+    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "templates", "default", "band-maid-background.png"));
+var background = new BackgroundWidget(backgroundPath, 480, 320);
 
-// Widget width adapts to orientation (480 for landscape, 320 for portrait)
-// set inside ScreenController after orientation is applied.
-var w = ScreenDevice.NativeHeight; // landscape width
-var sb = new StringBuilder();
+// Meters
+var cpuUsage = new CpuUsageMeter();
+var cpuTemp = new CpuTempMeter();
+var memory = new MemoryMeter();
+var gpuUsage = new GpuUsageMeter();
+var gpuTemp = new GpuTempMeter();
+var disk = new DiskMeter();
+
+// Widgets — coordinates are center-anchor (X, Y) for text, top-left for bars
+// Screen is 480×320 in landscape
 Widget[] widgets =
 [
-    new TextWidget(
-        new WidgetZone(0, 0, w / 2, 70),
-        TimeSpan.FromSeconds(2),
-        () => $"CPU: {CpuStats.GetUsagePercent():F0}%",
-        SKColors.Black, SKColors.White, 18f),
-    
-    new TextWidget(
-        new WidgetZone(w / 2, 0, w / 2, 70),
-        TimeSpan.FromSeconds(2),
-        () => $"Temp: {CpuStats.GetTemperatureCelsius()}",
-        SKColors.Black, SKColors.White, 18f),
+    new TextWidget(120, 35, cpuUsage,
+        SKColors.Black, SKColors.White, 18f,
+        TimeSpan.FromSeconds(2)),
 
-    new BarWidget(
-        new WidgetZone(0, 70, w, 40),
-        TimeSpan.FromSeconds(5),
-        () => MemoryStats.GetUsagePercent().UsedPercent,
-        SKColors.DarkSlateGray, SKColors.DodgerBlue, SKColors.White, 15f),
+    new TextWidget(360, 35, cpuTemp,
+        SKColors.Black, SKColors.White, 18f,
+        TimeSpan.FromSeconds(2)),
 
-    new TextWidget(
-        new WidgetZone(0, 110, w, 50),
-        TimeSpan.FromSeconds(5),
-        () =>
-        {
-            var (_, totalMb, usedMb) = MemoryStats.GetUsagePercent();
-            return $"Mem: {usedMb}MB / {totalMb}MB";
-        },
-        SKColors.Black, SKColors.White, 15f),
-    
-    new TextWidget(
-        new WidgetZone(0, 160, w, 50), TimeSpan.FromMinutes(1),
-        () =>
-        {
-            sb.Clear();
-            var diskStats = DiskStats.GetUsage();
-            foreach (var diskInfo in diskStats)
-            {
-                var usedGb = diskInfo.UsedBytes / (1024.0 * 1024 * 1024);
-                var totalGb = diskInfo.TotalBytes / (1024.0 * 1024 * 1024);
-                sb.AppendLine($"{diskInfo.Label}: {usedGb:F0}GB / {totalGb:F0}GB");
-            }
+    new BarWidget(0, 70, 200, 40, memory,
+        SKColors.DarkSlateGray, SKColors.DodgerBlue,
+        TimeSpan.FromSeconds(5)),
 
-            return sb.ToString();
-        }, 
-        SKColors.Black, SKColors.White, 15f),
-    new TextWidget(
-        new WidgetZone(0, 210, w / 2, 50),
-        TimeSpan.FromSeconds(2),
-        () => $"GPU: {GpuStats.GetUsagePercent():F0}%",
-        SKColors.Black, SKColors.White, 15f),
-    
-    new TextWidget(
-        new WidgetZone(w / 2, 210, w / 2, 50),
-        TimeSpan.FromSeconds(2),
-        () => $"Temp: {GpuStats.GetTemperatureCelsius()}",
-        SKColors.Black, SKColors.White, 15f),
-    
-    
+    new TextWidget(100, 135, memory,
+        SKColors.Black, SKColors.White, 15f,
+        TimeSpan.FromSeconds(5)),
+
+    new TextWidget(240, 185, disk,
+        SKColors.Black, SKColors.White, 15f,
+        TimeSpan.FromMinutes(1)),
+
+    new TextWidget(40, 235, gpuUsage,
+        SKColors.Transparent, SKColors.White, 20f,
+        TimeSpan.FromSeconds(2)),
+
+    new TextWidget(120, 235, gpuTemp,
+        SKColors.Transparent, SKColors.White, 20f,
+        TimeSpan.FromSeconds(2)),
 ];
 
-await using var controller = new ScreenController(widgets, port);
+await using var controller = new ScreenController(widgets, port, background);
 
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) =>
