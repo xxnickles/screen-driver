@@ -13,4 +13,8 @@
     <PackageReference Include="System.IO.Ports" Version="10.0.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\templates\**\*" Link="templates\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
