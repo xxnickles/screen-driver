@@ -5,12 +5,13 @@ namespace ScreenDriver.Widgets;
 
 /// <summary>
 /// Renders a horizontal fill bar proportional to a PercentMeter value.
+/// Background is composited from the shared ScreenBackground.
 /// No embedded label — pair with a separate TextWidget if needed.
 /// </summary>
 public record BarWidget : Widget
 {
-    private readonly SKColor _background;
     private readonly SKColor _fill;
+    private readonly SKBitmap _backgroundSlice;
 
     public PercentMeter Meter { get; }
 
@@ -20,21 +21,19 @@ public record BarWidget : Widget
         int width,
         int height,
         PercentMeter meter,
-        SKColor background,
+        ScreenBackground background,
         SKColor fill,
         TimeSpan interval) : base(new WidgetZone(x, y, width, height), interval)
     {
         Meter = meter;
-        _background = background;
         _fill = fill;
+        _backgroundSlice = background.CropZone(Zone);
     }
 
     public override Rgb565Frame Render()
     {
-        using var bitmap = new SKBitmap(Zone.Width, Zone.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+        using var bitmap = _backgroundSlice.Copy();
         using var canvas = new SKCanvas(bitmap);
-
-        canvas.Clear(_background);
 
         var value = Math.Clamp(Meter.Percent, 0, 100);
         var fillWidth = (float)(Zone.Width * value / 100.0);

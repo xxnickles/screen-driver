@@ -9,7 +9,8 @@ CpuStats.GetUsagePercent();
 
 var port = args.Length > 0 ? args[0] : null;
 var backgroundPath = Path.GetFullPath(
-    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "templates", "default", "band-maid-background.png"));
+    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "templates", "default", "dgb.png"));
+var background = ScreenBackground.FromImage(backgroundPath, 480, 320);
 
 // Meters
 var cpuUsage = new CpuUsageMeter();
@@ -23,34 +24,34 @@ var disk = new DiskMeter();
 // Screen is 480×320 in landscape
 Widget[] widgets =
 [
-    new BackgroundWidget(backgroundPath, 480, 320),
-    
-    new TextWidget(120, 35, cpuUsage,
-        SKColors.Black, SKColors.White, 18f,
+    new BackgroundWidget(background),
+
+    new TextWidget(120, 35, cpuUsage, background,
+        SKColors.White, 18f,
         TimeSpan.FromSeconds(2)),
 
-    new TextWidget(360, 35, cpuTemp,
-        SKColors.Black, SKColors.White, 18f,
+    new TextWidget(360, 35, cpuTemp, background,
+        SKColors.White, 18f,
         TimeSpan.FromSeconds(2)),
 
-    new BarWidget(0, 70, 200, 40, memory,
-        SKColors.DarkSlateGray, SKColors.DodgerBlue,
+    new BarWidget(0, 70, 200, 40, memory, background,
+        SKColors.DodgerBlue,
         TimeSpan.FromSeconds(5)),
 
-    new TextWidget(100, 135, memory,
-        SKColors.Black, SKColors.White, 15f,
+    new TextWidget(100, 135, memory, background,
+        SKColors.White, 15f,
         TimeSpan.FromSeconds(5)),
 
-    new TextWidget(240, 185, disk,
-        SKColors.Black, SKColors.White, 15f,
+    new TextWidget(240, 185, disk, background,
+        SKColors.White, 15f,
         TimeSpan.FromMinutes(1)),
 
-    new TextWidget(40, 235, gpuUsage,
-        SKColors.Transparent, SKColors.White, 20f,
+    new TextWidget(40, 235, gpuUsage, background,
+        SKColors.White, 20f,
         TimeSpan.FromSeconds(2)),
 
-    new TextWidget(120, 235, gpuTemp,
-        SKColors.Transparent, SKColors.White, 20f,
+    new TextWidget(120, 235, gpuTemp, background,
+        SKColors.White, 20f,
         TimeSpan.FromSeconds(2)),
 ];
 

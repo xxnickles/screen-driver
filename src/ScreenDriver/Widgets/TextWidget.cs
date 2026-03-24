@@ -7,13 +7,14 @@ namespace ScreenDriver.Widgets;
 /// Renders meter text into an auto-sized screen zone.
 /// (X, Y) is the center anchor point. Zone is computed from MaxText font metrics.
 /// Supports multiline text via \n in meter output.
+/// Background is composited from the shared ScreenBackground.
 /// </summary>
 public record TextWidget : Widget
 {
     private readonly SKTypeface _typeface;
     private readonly float _size;
-    private readonly SKColor _background;
     private readonly SKColor _foreground;
+    private readonly SKBitmap _backgroundSlice;
 
     public Meter Meter { get; }
 
@@ -21,25 +22,23 @@ public record TextWidget : Widget
         int x,
         int y,
         Meter meter,
-        SKColor background,
+        ScreenBackground background,
         SKColor foreground,
         float size,
         TimeSpan interval,
         SKTypeface? typeface = null) : base(ComputeZone(x, y, meter.MaxText, size, typeface), interval)
     {
         Meter = meter;
-        _background = background;
         _foreground = foreground;
         _size = size;
         _typeface = typeface ?? SKTypeface.Default;
+        _backgroundSlice = background.CropZone(Zone);
     }
 
     public override Rgb565Frame Render()
     {
-        using var bitmap = new SKBitmap(Zone.Width, Zone.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+        using var bitmap = _backgroundSlice.Copy();
         using var canvas = new SKCanvas(bitmap);
-
-        canvas.Clear(_background);
 
         using var font = new SKFont(_typeface, _size);
         using var paint = new SKPaint();
