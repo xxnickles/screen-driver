@@ -10,14 +10,17 @@ namespace ScreenDriver.Commands;
 public sealed class ScreenCommandQueue
 {
     private readonly Func<ScreenDevice?> _getDevice;
-    private readonly Action _onDisconnect;
     private readonly Channel<ScreenCommand> _channel = Channel.CreateUnbounded<ScreenCommand>();
     private Task? _drainTask;
 
-    public ScreenCommandQueue(Func<ScreenDevice?> getDevice, Action onDisconnect)
+    /// <summary>
+    /// Raised when a serial exception indicates the device has disconnected.
+    /// </summary>
+    public event Action? Disconnected;
+
+    public ScreenCommandQueue(Func<ScreenDevice?> getDevice)
     {
         _getDevice = getDevice;
-        _onDisconnect = onDisconnect;
     }
 
     public void Enqueue(ScreenCommand command)
@@ -55,7 +58,7 @@ public sealed class ScreenCommandQueue
                 catch (Exception ex) when (ex is IOException or TimeoutException or ObjectDisposedException or InvalidOperationException)
                 {
                     await Console.Error.WriteLineAsync($"Command failed: {ex.Message}");
-                    _onDisconnect();
+                    Disconnected?.Invoke();
                 }
             }
         }

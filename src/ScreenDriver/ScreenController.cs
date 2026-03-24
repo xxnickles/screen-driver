@@ -6,7 +6,7 @@ namespace ScreenDriver;
 
 /// <summary>
 /// Top-level coordinator that owns device lifecycle, command queue, and widget scheduling.
-/// Handles disconnect detection (via queue callback) and auto-reconnect via DeviceScanner.
+/// Handles disconnect detection (via queue event) and auto-reconnect via DeviceScanner.
 /// External code can submit commands via EnqueueCommand.
 /// </summary>
 public sealed class ScreenController : IAsyncDisposable
@@ -14,19 +14,19 @@ public sealed class ScreenController : IAsyncDisposable
     private static readonly TimeSpan ReconnectInterval = TimeSpan.FromSeconds(5);
 
     private readonly string? _fixedPort;
-    private readonly ScreenCommandQueue _queue;
+    private readonly ScreenCommandQueue _commandQueue;
     private readonly WidgetScheduler _scheduler;
-    private readonly BackgroundWidget? _background;
     private CancellationTokenSource? _cts;
     private ScreenDevice? _device;
     private volatile bool _reconnecting;
 
-    public ScreenController(IEnumerable<Widget> widgets, string? port = null, BackgroundWidget? background = null)
+    public ScreenController(IEnumerable<Widget> widgets, string? port = null)
     {
         _fixedPort = port;
-        _background = background;
-        _queue = new ScreenCommandQueue(() => _device, OnDisconnect);
+        _commandQueue = new ScreenCommandQueue(() => _device);
+        _commandQueue.Disconnected += OnDisconnect;
         _scheduler = new WidgetScheduler(widgets);
+        // Enqueue frame render events to the command queue to be presented in the screen
         _scheduler.FrameRendered += (zone, frame) =>
             EnqueueCommand(new DisplayBitmapCommand(zone, frame));
     }
@@ -35,7 +35,7 @@ public sealed class ScreenController : IAsyncDisposable
     /// Submits a command to the processing queue.
     /// Commands are dropped if the screen is disconnected.
     /// </summary>
-    public void EnqueueCommand(ScreenCommand command) => _queue.Enqueue(command);
+    public void EnqueueCommand(ScreenCommand command) => _commandQueue.Enqueue(command);
 
     /// <summary>
     /// Connects to the screen (polling if not found), initializes, and starts
@@ -47,8 +47,8 @@ public sealed class ScreenController : IAsyncDisposable
 
         await ConnectAsync(_cts.Token);
 
-        _queue.Start(_cts.Token);
-        _scheduler.StartAsync(_cts.Token);
+        _commandQueue.Start(_cts.Token);
+        _scheduler.Start(_cts.Token);
 
         Console.WriteLine("Widgets running.");
     }
@@ -58,8 +58,8 @@ public sealed class ScreenController : IAsyncDisposable
         if (_cts is null) return;
 
         await _cts.CancelAsync();
-        await _scheduler.StopAsync();
-        await _queue.StopAsync();
+        await _scheduler.Stop();
+        await _commandQueue.StopAsync();
 
         if (_device is not null)
         {
@@ -96,7 +96,6 @@ public sealed class ScreenController : IAsyncDisposable
                     device.FillScreen(0, 0, 0);
 
                     _device = device;
-                    SendBackground();
                     return;
                 }
                 catch (Exception ex)
@@ -110,22 +109,12 @@ public sealed class ScreenController : IAsyncDisposable
         }
     }
 
-    private void SendBackground()
-    {
-        if (_background is null || _device is null) return;
-
-        var frame = _background.Render();
-        var zone = _background.Zone;
-        _device.DisplayBitmap(zone.X, zone.Y, zone.EndX, zone.EndY, frame.Data);
-    }
-
     private void OnDisconnect()
     {
         if (_reconnecting) return;
         _reconnecting = true;
 
-        Console.Error.WriteLine("Screen disconnected. Pausing widgets and scanning for reconnect...");
-        _scheduler.Pause();
+        Console.Error.WriteLine("Screen disconnected. Stopping scheduler and scanning for reconnect...");
 
         // Dispose old device
         try { _device?.Dispose(); } catch { /* already gone */ }
@@ -139,10 +128,11 @@ public sealed class ScreenController : IAsyncDisposable
     {
         try
         {
+            await _scheduler.Stop();
             await ConnectAsync(ct);
 
-            Console.WriteLine("Screen reconnected. Resuming widgets.");
-            _scheduler.Resume();
+            Console.WriteLine("Screen reconnected. Restarting scheduler.");
+            _scheduler.Start(ct);
         }
         catch (OperationCanceledException)
         {

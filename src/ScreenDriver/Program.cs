@@ -10,7 +10,6 @@ CpuStats.GetUsagePercent();
 var port = args.Length > 0 ? args[0] : null;
 var backgroundPath = Path.GetFullPath(
     Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "templates", "default", "band-maid-background.png"));
-var background = new BackgroundWidget(backgroundPath, 480, 320);
 
 // Meters
 var cpuUsage = new CpuUsageMeter();
@@ -24,6 +23,8 @@ var disk = new DiskMeter();
 // Screen is 480×320 in landscape
 Widget[] widgets =
 [
+    new BackgroundWidget(backgroundPath, 480, 320),
+    
     new TextWidget(120, 35, cpuUsage,
         SKColors.Black, SKColors.White, 18f,
         TimeSpan.FromSeconds(2)),
@@ -53,7 +54,7 @@ Widget[] widgets =
         TimeSpan.FromSeconds(2)),
 ];
 
-await using var controller = new ScreenController(widgets, port, background);
+await using var controller = new ScreenController(widgets, port);
 
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) =>
