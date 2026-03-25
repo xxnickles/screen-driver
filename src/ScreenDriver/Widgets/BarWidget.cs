@@ -11,6 +11,7 @@ namespace ScreenDriver.Widgets;
 public record BarWidget : Widget
 {
     private readonly SKColor _fill;
+    private readonly SKColor? _border;
     private readonly SKBitmap _backgroundSlice;
 
     public PercentMeter Meter { get; }
@@ -23,10 +24,12 @@ public record BarWidget : Widget
         PercentMeter meter,
         ScreenBackground background,
         SKColor fill,
-        TimeSpan interval) : base(new WidgetZone(x, y, width, height), interval)
+        TimeSpan interval,
+        SKColor? border = null) : base(new WidgetZone(x, y, width, height), interval)
     {
         Meter = meter;
         _fill = fill;
+        _border = border;
         _backgroundSlice = background.CropZone(Zone);
     }
 
@@ -41,6 +44,16 @@ public record BarWidget : Widget
         using var fillPaint = new SKPaint();
         fillPaint.Color = _fill;
         canvas.DrawRect(0, 0, fillWidth, Zone.Height, fillPaint);
+
+        if (_border is not { } borderColor)
+            return Rgb565Frame.FromBgra8888(bitmap.GetPixelSpan(), Zone.Width, Zone.Height);
+        
+        using var borderPaint = new SKPaint();
+        borderPaint.Color = borderColor;
+        borderPaint.Style = SKPaintStyle.Stroke;
+        borderPaint.StrokeWidth = 1;
+        borderPaint.IsAntialias = false;
+        canvas.DrawRect(0, 0, Zone.Width - 1, Zone.Height - 1, borderPaint);
 
         return Rgb565Frame.FromBgra8888(bitmap.GetPixelSpan(), Zone.Width, Zone.Height);
     }

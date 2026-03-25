@@ -5,8 +5,9 @@ using ScreenDriver.Themes;
 using ScreenDriver.Widgets;
 using SkiaSharp;
 
-// Take a baseline CPU reading so the first real render has a delta
+// Take baseline readings so the first real render has a delta
 CpuStats.GetUsagePercent();
+NetworkStats.GetSpeed();
 
 var port = args.Length > 0 ? args[0] : null;
 var themesRoot = Path.Combine(AppContext.BaseDirectory, "templates");
@@ -15,48 +16,64 @@ var theme = Theme.Load(themesRoot, "default", 480, 320);
 // Meters
 var cpuUsage = new CpuUsageMeter();
 var cpuTemp = new CpuTempMeter();
-var memory = new MemoryMeter();
 var gpuUsage = new GpuUsageMeter();
 var gpuTemp = new GpuTempMeter();
+var memory = new MemoryMeter();
 var disk = new DiskMeter();
+var netUp = new NetworkUpMeter();
+var netDown = new NetworkDownMeter();
 
-// Widgets — coordinates are center-anchor (X, Y) for text, top-left for bars
-// Screen is 480×320 in landscape
 Widget[] widgets =
 [
     new BackgroundWidget(theme.Background),
 
-    new TextWidget(120, 35, cpuUsage, theme.Background,
+    // CPU panel (top-left)
+    new TextWidget(75, 80, cpuUsage, theme.Background,
+        SKColors.White, 34f,
+        TimeSpan.FromSeconds(2),
+        typeface: theme.Typeface),
+
+    new TextWidget(75, 130, cpuTemp, theme.Background,
         SKColors.White, 18f,
         TimeSpan.FromSeconds(2),
         typeface: theme.Typeface),
 
-    new TextWidget(360, 35, cpuTemp, theme.Background,
+    // GPU panel (top-right)
+    new TextWidget(240, 80, gpuUsage, theme.Background,
+        SKColors.White, 34f,
+        TimeSpan.FromSeconds(2),
+        typeface: theme.Typeface),
+
+    new TextWidget(240, 130, gpuTemp, theme.Background,
         SKColors.White, 18f,
         TimeSpan.FromSeconds(2),
         typeface: theme.Typeface),
 
-    new BarWidget(0, 70, 200, 40, memory, theme.Background,
-        SKColors.DodgerBlue,
-        TimeSpan.FromSeconds(5)),
-
-    new TextWidget(100, 135, memory, theme.Background,
-        SKColors.White, 15f,
-        TimeSpan.FromSeconds(5),
-        typeface: theme.Typeface),
-
-    new TextWidget(240, 185, disk, theme.Background,
-        SKColors.White, 15f,
+    // Drives panel (left-middle, stacked)
+    new TextWidget(400, 20, disk, theme.Background,
+        SKColors.DodgerBlue, 13f,
         TimeSpan.FromMinutes(1),
         typeface: theme.Typeface),
 
-    new TextWidget(40, 235, gpuUsage, theme.Background,
-        SKColors.White, 20f,
+    // Memory panel (middle, wide)
+    new BarWidget(115, 195, 140, 15, memory, theme.Background,
+        SKColors.DodgerBlue,
+        TimeSpan.FromSeconds(5),
+        SKColors.Azure),
+
+    new TextWidget(190, 220, memory, theme.Background,
+        SKColors.White, 17f,
+        TimeSpan.FromSeconds(5),
+        typeface: theme.Typeface),
+
+    // Network (bottom strip)
+    new TextWidget(110, 280, netDown, theme.Background,
+        SKColors.White, 13f,
         TimeSpan.FromSeconds(2),
         typeface: theme.Typeface),
 
-    new TextWidget(120, 235, gpuTemp, theme.Background,
-        SKColors.White, 20f,
+    new TextWidget(240, 280, netUp, theme.Background,
+        SKColors.White, 13f,
         TimeSpan.FromSeconds(2),
         typeface: theme.Typeface),
 ];
@@ -77,7 +94,9 @@ try
 {
     await Task.Delay(Timeout.Infinite, cts.Token);
 }
-catch (OperationCanceledException) { }
+catch (OperationCanceledException)
+{
+}
 
 Console.WriteLine("Shutting down...");
 await controller.StopAsync();

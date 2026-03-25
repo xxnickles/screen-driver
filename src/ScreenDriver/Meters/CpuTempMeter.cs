@@ -4,7 +4,7 @@ namespace ScreenDriver.Meters;
 
 public record CpuTempMeter : Meter
 {
-    public override string Label => "CPU Temp";
+    public override string Label => "TEMP";
     public override string MaxText => "999°C";
 
     public override string Format()

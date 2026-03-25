@@ -5,7 +5,7 @@ namespace ScreenDriver.Widgets;
 
 /// <summary>
 /// Renders meter text into an auto-sized screen zone.
-/// (X, Y) is the center anchor point. Zone is computed from MaxText font metrics.
+/// (X, Y) is the top-center anchor point. Zone is computed from MaxText font metrics.
 /// Supports multiline text via \n in meter output.
 /// Background is composited from the shared ScreenBackground.
 /// </summary>
@@ -49,8 +49,7 @@ public record TextWidget : Widget
         var lines = text.Split('\n');
         var metrics = font.Metrics;
         var lineHeight = metrics.Descent - metrics.Ascent + metrics.Leading;
-        var totalHeight = lineHeight * lines.Length;
-        var startY = (Zone.Height - totalHeight) / 2f - metrics.Ascent;
+        var startY = -metrics.Ascent;
 
         for (var i = 0; i < lines.Length; i++)
         {
@@ -80,8 +79,7 @@ public record TextWidget : Widget
         var totalHeight = Math.Max((int)Math.Ceiling(lineHeight * maxLines.Length) + 2, 1);
 
         var x = centerX - totalWidth / 2;
-        var y = centerY - totalHeight / 2;
 
-        return new WidgetZone(x, y, totalWidth, totalHeight);
+        return new WidgetZone(x, centerY, totalWidth, totalHeight);
     }
 }
