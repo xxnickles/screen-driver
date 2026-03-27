@@ -19,6 +19,10 @@ public sealed class ScreenDevice : IDisposable
     public const int NativeWidth = 320;
     public const int NativeHeight = 480;
 
+    // Landscape dimensions — the fixed operating mode for this driver
+    public const int ScreenWidth = NativeHeight;  // 480
+    public const int ScreenHeight = NativeWidth;  // 320
+
     // Chunk size: always based on native portrait width
     private const int ImageChunkSize = NativeWidth * 8;
 

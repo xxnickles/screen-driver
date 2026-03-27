@@ -1,5 +1,6 @@
 using ScreenDriver.Commands;
 using ScreenDriver.Scheduler;
+using ScreenDriver.Themes;
 using ScreenDriver.Widgets;
 
 namespace ScreenDriver;
@@ -20,12 +21,12 @@ public sealed class ScreenController : IAsyncDisposable
     private ScreenDevice? _device;
     private volatile bool _reconnecting;
 
-    public ScreenController(IEnumerable<Widget> widgets, string? port = null)
+    public ScreenController(Theme theme, string? port = null)
     {
         _fixedPort = port;
         _commandQueue = new ScreenCommandQueue(() => _device);
         _commandQueue.Disconnected += OnDisconnect;
-        _scheduler = new WidgetScheduler(widgets);
+        _scheduler = new WidgetScheduler(theme.Widgets);
         // Enqueue frame render events to the command queue to be presented in the screen
         _scheduler.FrameRendered += (zone, frame) =>
             EnqueueCommand(new DisplayBitmapCommand(zone, frame));
