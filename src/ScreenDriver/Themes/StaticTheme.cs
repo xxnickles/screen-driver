@@ -8,6 +8,34 @@ public record StaticTheme : Theme
 {
     private const string Name = "static";
 
+    // Font sizes
+    private const float LabelFontSize = 37f;
+    private const float UsageFontSize = 34f;
+    private const float UsageZoneFontSize = 38f;
+    private const float TempFontSize = 26f;
+    private const float TempZoneFontSize = 24f;
+    private const float DiskLabelFontSize = 18f;
+    private const float DiskValueFontSize = 16f;
+    private const float MemoryFontSize = 21f;
+    private const float NetworkFontSize = 21f;
+    private const float TimesFontSize = 15f;
+
+    // Colors
+    private static readonly SKColor PrimaryColor = SKColors.Black;
+    private static readonly SKColor DiskLabelColor = SKColors.WhiteSmoke;
+    private static readonly SKColor MemoryBarFillColor = SKColors.DodgerBlue;
+    private static readonly SKColor MemoryBarTrackColor = SKColors.Azure;
+
+    // Sizing reference texts
+    private const string UsageSizeText = "100%";
+    private const string TempSizeText = "999\u00b0C";
+    private const string DiskSizeText = "99999 / 99999 GB";
+    private const string MemorySizeText = "99999 / 99999 MB";
+    private const string NetworkSizeText = "999.9 MB/s";
+
+    // Disk Y
+    private const int DiskY = 30;
+
     public StaticTheme()
         : base(BuildWidgets())
     {
@@ -25,70 +53,100 @@ public record StaticTheme : Theme
         [
             new BackgroundWidget(background),
 
+            new DateWidget(ComputeZone(70, 15, "12/31/9999", TimesFontSize, typeface), TimeSpan.FromHours(1),
+                background, typeface, TimesFontSize, PrimaryColor),
+            
+            new ClockWidget(ComputeZone(435, 15, "23:59", TimesFontSize, typeface), TimeSpan.FromSeconds(10),
+                background, typeface, TimesFontSize, PrimaryColor),
+
             // CPU panel (top-left)
             new TextWidget(
-                ComputeZone(75, 40, "CPU", 24f, typeface),
-                background, typeface, 24f, SKColors.Black, "CPU"),
+                ComputeZone(75, 30, "CPU", LabelFontSize, typeface),
+                background, typeface, LabelFontSize, PrimaryColor, "CPU"),
             new CpuUsageWidget(
-                ComputeZone(75, 70, "100%", 38f, typeface),
+                ComputeZone(75, 70, UsageSizeText, UsageZoneFontSize, typeface),
                 TimeSpan.FromSeconds(2),
-                background, typeface, 34f, SKColors.Black),
+                background, typeface, UsageFontSize, PrimaryColor),
 
             new CpuTempWidget(
-                ComputeZone(75, 120, "999\u00b0C", 24f, typeface),
+                ComputeZone(75, 120, TempSizeText, TempZoneFontSize, typeface),
                 TimeSpan.FromSeconds(2),
-                background, typeface, 18f, SKColors.Black),
+                background, typeface, TempFontSize, PrimaryColor),
 
             // GPU panel (top-right)
             new TextWidget(
-                ComputeZone(240, 40, "GPU", 24f, typeface),
-                background, typeface, 24f, SKColors.Black, "GPU"),
-            
+                ComputeZone(240, 30, "GPU", LabelFontSize, typeface),
+                background, typeface, LabelFontSize, PrimaryColor, "GPU"),
+
             new GpuUsageWidget(
-                ComputeZone(240, 70, "100%", 38f, typeface),
+                ComputeZone(240, 70, UsageSizeText, UsageZoneFontSize, typeface),
                 TimeSpan.FromSeconds(2),
-                background, typeface, 34f, SKColors.Black),
+                background, typeface, UsageFontSize, PrimaryColor),
 
             new GpuTempWidget(
-                ComputeZone(240, 120, "999\u00b0C", 18f, typeface),
+                ComputeZone(240, 120, TempSizeText, TempFontSize, typeface),
                 TimeSpan.FromSeconds(2),
-                background, typeface, 24f, SKColors.Black),
+                background, typeface, TempZoneFontSize, PrimaryColor),
 
-            // Drives panel (right side)
+            // Drives panel (right side, one widget per drive)
+            new TextWidget(
+                ComputeZone(380, DiskY, "Disks", LabelFontSize, typeface),
+                background, typeface, LabelFontSize, PrimaryColor, "disks"),
             new DiskWidget(
-                DiskWidget.ComputeZone(400, 20, typeface, 16f, 14f, "99999 / 99999 GB", 3),
+                DiskWidget.ComputeZone(380, DiskY + 60, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
                 TimeSpan.FromMinutes(1),
                 background, typeface,
-                labelFontSize: 16f, valueFontSize: 14f,
-                labelColor: SKColors.WhiteSmoke, valueColor: SKColors.Black),
+                labelFontSize: DiskLabelFontSize, valueFontSize: DiskValueFontSize,
+                labelColor: DiskLabelColor, valueColor: PrimaryColor,
+                driveIndex: 0),
+            new DiskWidget(
+                DiskWidget.ComputeZone(380, DiskY + 105, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
+                TimeSpan.FromMinutes(1),
+                background, typeface,
+                labelFontSize: DiskLabelFontSize, valueFontSize: DiskValueFontSize,
+                labelColor: DiskLabelColor, valueColor: PrimaryColor,
+                driveIndex: 1),
+            new DiskWidget(
+                DiskWidget.ComputeZone(380, DiskY + 150, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
+                TimeSpan.FromMinutes(1),
+                background, typeface,
+                labelFontSize: DiskLabelFontSize, valueFontSize: DiskValueFontSize,
+                labelColor: DiskLabelColor, valueColor: PrimaryColor,
+                driveIndex: 2),
 
             // Memory panel (middle, wide)
             new TextWidget(
-                ComputeZone(30, 170, "RAM", 24f, typeface),
-                background, typeface, 24f, SKColors.Black, "RAM"),
+                ComputeZone(150, 160, "RAM", LabelFontSize, typeface),
+                background, typeface, LabelFontSize, PrimaryColor, "RAM"),
 
             new MemoryBarWidget(
-                new WidgetZone(30, 215, 140, 15),
+                new WidgetZone(30, 215, 240, 15),
                 TimeSpan.FromSeconds(5),
                 background,
-                SKColors.DodgerBlue, SKColors.Azure),
+                MemoryBarFillColor, MemoryBarTrackColor),
 
             new MemoryTextWidget(
-                ComputeZone(100, 240, "99999 / 99999 MB", 17f, typeface),
+                ComputeZone(150, 230, MemorySizeText, MemoryFontSize, typeface),
                 TimeSpan.FromSeconds(5),
-                background, typeface, 17f, SKColors.Black),
+                background, typeface, MemoryFontSize, PrimaryColor),
 
             // Network (bottom strip)
-            new NetworkWidget(
-                ComputeZone(110, 280, "999.9 MB/s", 13f, typeface),
-                TimeSpan.FromSeconds(2),
-                background, typeface, 13f, SKColors.Black,
-                NetworkDirection.Down),
 
+            new TextWidget(
+                ComputeZone(50, 265, "DN", LabelFontSize, typeface),
+                background, typeface, LabelFontSize, PrimaryColor, "DN"),
             new NetworkWidget(
-                ComputeZone(240, 280, "999.9 MB/s", 13f, typeface),
+                ComputeZone(155, 270, NetworkSizeText, NetworkFontSize, typeface),
                 TimeSpan.FromSeconds(2),
-                background, typeface, 13f, SKColors.Black,
+                background, typeface, NetworkFontSize, PrimaryColor,
+                NetworkDirection.Down),
+            new TextWidget(
+                ComputeZone(290, 265, "UP", LabelFontSize, typeface),
+                background, typeface, LabelFontSize, PrimaryColor, "UP"),
+            new NetworkWidget(
+                ComputeZone(400, 270, NetworkSizeText, NetworkFontSize, typeface),
+                TimeSpan.FromSeconds(2),
+                background, typeface, NetworkFontSize, PrimaryColor,
                 NetworkDirection.Up),
         ];
     }

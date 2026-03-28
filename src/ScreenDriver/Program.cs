@@ -2,7 +2,7 @@ using ScreenDriver;
 using ScreenDriver.Themes;
 
 var port = args.Length > 0 ? args[0] : null;
- var theme = new DefaultTheme();
+var theme = new DefaultTheme();
 // var theme = new StaticTheme();
 
 await using var controller = new ScreenController(theme, port);
