@@ -5,5 +5,7 @@ namespace ScreenDriver.Widgets;
 /// </summary>
 public abstract record Widget(WidgetZone Zone, TimeSpan Interval)
 {
+    public Action<string>? EventRaised { get; set; }
+
     public abstract Rgb565Frame Render();
 }

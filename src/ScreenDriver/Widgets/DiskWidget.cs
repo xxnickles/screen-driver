@@ -67,7 +67,7 @@ public record DiskWidget : Widget
         return Rgb565Frame.FromBgra8888(bitmap.GetPixelSpan(), Zone.Width, Zone.Height);
     }
 
-    private static IReadOnlyList<DiskInfo> ReadAllDisks()
+    private IReadOnlyList<DiskInfo> ReadAllDisks()
     {
         var labelMap = BuildLabelMap();
         var seen = new HashSet<string>();
@@ -94,9 +94,9 @@ public record DiskWidget : Widget
                 var label = ResolveLabel(device, labelMap, ref sataIndex);
                 results.Add(new DiskInfo(label, device, info.TotalSize - info.AvailableFreeSpace, info.TotalSize));
             }
-            catch
+            catch (Exception ex)
             {
-                // Skip inaccessible mounts
+                EventRaised?.Invoke($"Mount {mountPoint} inaccessible: {ex.Message}");
             }
         }
 
@@ -119,7 +119,7 @@ public record DiskWidget : Widget
         return sataIndex == 1 ? "SATA" : $"SATA {sataIndex}";
     }
 
-    private static Dictionary<string, string> BuildLabelMap()
+    private Dictionary<string, string> BuildLabelMap()
     {
         var map = new Dictionary<string, string>();
         const string labelDir = "/dev/disk/by-label";
@@ -137,9 +137,9 @@ public record DiskWidget : Widget
                 map[target] = label;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Best effort
+            EventRaised?.Invoke($"Label map build failed: {ex.Message}");
         }
 
         return map;

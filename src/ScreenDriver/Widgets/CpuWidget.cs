@@ -120,8 +120,9 @@ public record CpuTempWidget : Widget
             var text = File.ReadAllText(path).Trim();
             return int.Parse(text) / 1000;
         }
-        catch
+        catch (Exception ex)
         {
+            EventRaised?.Invoke($"Temp read failed: {ex.Message}");
             return null;
         }
     }

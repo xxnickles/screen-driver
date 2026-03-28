@@ -117,9 +117,9 @@ public record NetworkWidget : Widget
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Best effort
+            EventRaised?.Invoke($"Interface probe failed: {ex.Message}");
         }
 
         return null;

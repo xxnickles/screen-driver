@@ -52,8 +52,9 @@ public record GpuUsageWidget : Widget
             var text = File.ReadAllText(_usagePath).Trim();
             return int.Parse(text);
         }
-        catch
+        catch (Exception ex)
         {
+            EventRaised?.Invoke($"Usage read failed: {ex.Message}");
             return null;
         }
     }
@@ -126,8 +127,9 @@ public record GpuTempWidget : Widget
             var text = File.ReadAllText(_tempPath).Trim();
             return int.Parse(text) / 1000;
         }
-        catch
+        catch (Exception ex)
         {
+            EventRaised?.Invoke($"Temp read failed: {ex.Message}");
             return null;
         }
     }

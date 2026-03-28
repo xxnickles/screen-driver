@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using ScreenDriver.Events;
 
 namespace ScreenDriver.Commands;
 
@@ -10,6 +11,7 @@ namespace ScreenDriver.Commands;
 public sealed class ScreenCommandQueue
 {
     private readonly Func<ScreenDevice?> _getDevice;
+    private readonly EventBus _bus;
     private readonly Channel<ScreenCommand> _channel = Channel.CreateUnbounded<ScreenCommand>();
     private Task? _drainTask;
 
@@ -18,9 +20,10 @@ public sealed class ScreenCommandQueue
     /// </summary>
     public event Action? Disconnected;
 
-    public ScreenCommandQueue(Func<ScreenDevice?> getDevice)
+    public ScreenCommandQueue(Func<ScreenDevice?> getDevice, EventBus bus)
     {
         _getDevice = getDevice;
+        _bus = bus;
     }
 
     public void Enqueue(ScreenCommand command)
@@ -57,7 +60,7 @@ public sealed class ScreenCommandQueue
                 }
                 catch (Exception ex) when (ex is IOException or TimeoutException or ObjectDisposedException or InvalidOperationException)
                 {
-                    await Console.Error.WriteLineAsync($"Command failed: {ex.Message}");
+                    _bus.Publish(new Events.Error("CommandQueue", ex));
                     Disconnected?.Invoke();
                 }
             }
