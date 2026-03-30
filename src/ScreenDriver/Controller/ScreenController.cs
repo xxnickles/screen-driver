@@ -15,23 +15,26 @@ public sealed class ScreenController : IAsyncDisposable
     private static readonly TimeSpan ReconnectInterval = TimeSpan.FromSeconds(5);
 
     private readonly string? _fixedPort;
+    private readonly ThemeRegistry _registry;
     private readonly EventBus _bus;
     private readonly ScreenCommandQueue _commandQueue;
-    private readonly WidgetScheduler _scheduler;
+    private WidgetScheduler _scheduler;
     private CancellationTokenSource? _cts;
     private ScreenDevice? _device;
     private volatile bool _reconnecting;
+    private string _activeTheme;
 
-    public ScreenController(Theme theme, EventBus bus, string? port = null)
+    public string ActiveTheme => _activeTheme;
+
+    public ScreenController(ThemeRegistry registry, EventBus bus, string? port = null)
     {
         _fixedPort = port;
+        _registry = registry;
+        _activeTheme = registry.DefaultThemeName;
         _bus = bus;
         _commandQueue = new ScreenCommandQueue(() => _device, bus);
         _commandQueue.Disconnected += OnDisconnect;
-        _scheduler = new WidgetScheduler(theme.Widgets, bus);
-        // Enqueue frame render events to the command queue to be presented in the screen
-        _scheduler.FrameRendered += (zone, frame) =>
-            EnqueueCommand(new DisplayBitmapCommand(zone, frame));
+        _scheduler = CreateScheduler(registry.BuildDefault());
     }
 
     /// <summary>
@@ -78,6 +81,43 @@ public sealed class ScreenController : IAsyncDisposable
     public async ValueTask DisposeAsync() => await Stop();
 
     /// <summary>
+    /// Hot-swaps the active theme. Stops the scheduler, builds the new theme,
+    /// clears the screen, and restarts the scheduler. Device connection stays alive.
+    /// </summary>
+    public async Task SwapTheme(string name)
+    {
+        if (_cts is null) return;
+
+        Theme theme;
+        try
+        {
+            theme = _registry.Build(name);
+        }
+        catch (ArgumentException ex)
+        {
+            _bus.Publish(new Error("Controller", ex));
+            return;
+        }
+
+        await _scheduler.Stop();
+
+        EnqueueCommand(new FillScreenCommand(0, 0, 0));
+        _scheduler = CreateScheduler(theme);
+        _scheduler.Start(_cts.Token);
+        _activeTheme = name;
+
+        _bus.Publish(new Info("Controller", $"Theme switched to '{name}'."));
+    }
+
+    private WidgetScheduler CreateScheduler(Theme theme)
+    {
+        var scheduler = new WidgetScheduler(theme.Widgets, _bus);
+        scheduler.FrameRendered += (zone, frame) =>
+            EnqueueCommand(new DisplayBitmapCommand(zone, frame));
+        return scheduler;
+    }
+
+    /// <summary>
     /// Polls for the screen until found, then opens and initializes it.
     /// </summary>
     private async Task Connect(CancellationToken ct)
@@ -104,7 +144,7 @@ public sealed class ScreenController : IAsyncDisposable
                 }
                 catch (Exception ex)
                 {
-                    _bus.Publish(new Events.Error("Controller", ex));
+                    _bus.Publish(new Error("Controller", ex));
                 }
             }
 

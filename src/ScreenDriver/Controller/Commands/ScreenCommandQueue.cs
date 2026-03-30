@@ -61,7 +61,7 @@ public sealed class ScreenCommandQueue
                 }
                 catch (Exception ex) when (ex is IOException or TimeoutException or ObjectDisposedException or InvalidOperationException)
                 {
-                    _bus.Publish(new Events.Error("CommandQueue", ex));
+                    _bus.Publish(new Error("CommandQueue", ex));
                     Disconnected?.Invoke();
                 }
             }
