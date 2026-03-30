@@ -1,6 +1,7 @@
+using ScreenDriver.Widgets;
 using SkiaSharp;
 
-namespace ScreenDriver.Widgets;
+namespace ScreenDriver.Rendering;
 
 /// <summary>
 /// Owns the full-screen background bitmap. Widgets crop their zone from it

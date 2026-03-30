@@ -1,3 +1,5 @@
+using ScreenDriver.Device;
+using ScreenDriver.Rendering;
 using ScreenDriver.Widgets;
 using SkiaSharp;
 using static ScreenDriver.Themes.ThemeHelpers;
@@ -12,7 +14,7 @@ public record DefaultTheme : Theme
     private const float UsageFontSize = 34f;
     private const float TempFontSize = 18f;
     private const float DiskLabelFontSize = 16f;
-    private const float DiskValueFontSize = 13f;
+    private const float DiskValueFontSize = 14f;
     private const float MemoryFontSize = 17f;
     private const float NetworkFontSize = 13f;
 
@@ -70,21 +72,21 @@ public record DefaultTheme : Theme
             // Drives panel (right side, one widget per drive)
             new DiskWidget(
                 DiskWidget.ComputeZone(400, 20, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
-                TimeSpan.FromMinutes(1),
+                TimeSpan.FromMinutes(5),
                 background, typeface,
                 labelFontSize: DiskLabelFontSize, valueFontSize: DiskValueFontSize,
                 labelColor: DiskLabelColor, valueColor: DiskValueColor,
                 driveIndex: 0),
             new DiskWidget(
                 DiskWidget.ComputeZone(400, 65, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
-                TimeSpan.FromMinutes(1),
+                TimeSpan.FromMinutes(5),
                 background, typeface,
                 labelFontSize: DiskLabelFontSize, valueFontSize: DiskValueFontSize,
                 labelColor: DiskLabelColor, valueColor: DiskValueColor,
                 driveIndex: 1),
             new DiskWidget(
                 DiskWidget.ComputeZone(400, 110, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
-                TimeSpan.FromMinutes(1),
+                TimeSpan.FromMinutes(5),
                 background, typeface,
                 labelFontSize: DiskLabelFontSize, valueFontSize: DiskValueFontSize,
                 labelColor: DiskLabelColor, valueColor: DiskValueColor,
@@ -116,8 +118,8 @@ public record DefaultTheme : Theme
                 NetworkDirection.Up),
             
             // Clock
-            new ClockWidget(ComputeZone(400, 180, "23:59", TempFontSize, typeface), 
-                TimeSpan.FromSeconds(5),
+            new ClockWidget(ComputeZone(400, 180, "00:00", TempFontSize, typeface), 
+                TimeSpan.FromSeconds(3),
                 background, typeface, TempFontSize, PrimaryColor)
         ];
     }

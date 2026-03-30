@@ -1,4 +1,4 @@
-namespace ScreenDriver;
+namespace ScreenDriver.Device;
 
 /// <summary>
 /// Scans Linux sysfs to find our USB screen by its vendor/product IDs.

@@ -1,6 +1,8 @@
+using ScreenDriver.Device;
+using ScreenDriver.Rendering;
 using ScreenDriver.Widgets;
 
-namespace ScreenDriver.Commands;
+namespace ScreenDriver.Controller.Commands;
 
 /// <summary>
 /// Base type for all commands that can be sent to the screen.

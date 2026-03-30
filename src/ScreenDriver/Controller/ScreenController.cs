@@ -1,10 +1,9 @@
-using ScreenDriver.Commands;
-using ScreenDriver.Events;
-using ScreenDriver.Scheduler;
+using ScreenDriver.Controller.Commands;
+using ScreenDriver.Controller.Events;
+using ScreenDriver.Device;
 using ScreenDriver.Themes;
-using ScreenDriver.Widgets;
 
-namespace ScreenDriver;
+namespace ScreenDriver.Controller;
 
 /// <summary>
 /// Top-level coordinator that owns device lifecycle, command queue, and widget scheduling.

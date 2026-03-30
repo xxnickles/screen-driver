@@ -1,6 +1,6 @@
 using System.Threading.Channels;
 
-namespace ScreenDriver.Events;
+namespace ScreenDriver.Controller.Events;
 
 public sealed class EventBus
 {

@@ -1,10 +1,10 @@
-namespace ScreenDriver.Protocol;
+namespace ScreenDriver.Device.Protocol;
 
 /// <summary>
 /// Revision A command codes and packet encoding for the UsbMonitor 3.5" screen.
 /// Each command is a 6-byte packet: 5 bytes of packed coordinates + 1 byte command code.
 /// </summary>
-public static class ScreenCommand
+public static class DeviceCommand
 {
     // Command codes (byte 5 of every packet)
     public const byte Hello = 0x45;          // 69 - Handshake / discovery

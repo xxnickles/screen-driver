@@ -1,4 +1,4 @@
-namespace ScreenDriver.Widgets;
+namespace ScreenDriver.Rendering;
 
 /// <summary>
 /// RGB565 Little-Endian pixel data for a known-size region.

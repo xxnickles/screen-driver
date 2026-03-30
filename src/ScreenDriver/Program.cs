@@ -1,5 +1,6 @@
 using ScreenDriver;
-using ScreenDriver.Events;
+using ScreenDriver.Controller;
+using ScreenDriver.Controller.Events;
 using ScreenDriver.Themes;
 
 var port = args.Length > 0 ? args[0] : null;

@@ -1,6 +1,6 @@
 using System.IO.Ports;
 
-namespace ScreenDriver;
+namespace ScreenDriver.Device;
 
 /// <summary>
 /// Manages the serial port connection to the USB screen.

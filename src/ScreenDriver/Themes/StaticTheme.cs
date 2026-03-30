@@ -1,3 +1,5 @@
+using ScreenDriver.Device;
+using ScreenDriver.Rendering;
 using ScreenDriver.Widgets;
 using SkiaSharp;
 using static ScreenDriver.Themes.ThemeHelpers;
@@ -136,7 +138,7 @@ public record StaticTheme : Theme
                 ComputeZone(50, 265, "DN", LabelFontSize, typeface),
                 background, typeface, LabelFontSize, PrimaryColor, "DN"),
             new NetworkWidget(
-                ComputeZone(155, 270, NetworkSizeText, NetworkFontSize, typeface),
+                ComputeZone(155, 275, NetworkSizeText, NetworkFontSize, typeface),
                 TimeSpan.FromSeconds(2),
                 background, typeface, NetworkFontSize, PrimaryColor,
                 NetworkDirection.Down),
@@ -144,7 +146,7 @@ public record StaticTheme : Theme
                 ComputeZone(290, 265, "UP", LabelFontSize, typeface),
                 background, typeface, LabelFontSize, PrimaryColor, "UP"),
             new NetworkWidget(
-                ComputeZone(400, 270, NetworkSizeText, NetworkFontSize, typeface),
+                ComputeZone(400, 275, NetworkSizeText, NetworkFontSize, typeface),
                 TimeSpan.FromSeconds(2),
                 background, typeface, NetworkFontSize, PrimaryColor,
                 NetworkDirection.Up),

@@ -1,7 +1,8 @@
 using System.Threading.Channels;
-using ScreenDriver.Events;
+using ScreenDriver.Controller.Events;
+using ScreenDriver.Device;
 
-namespace ScreenDriver.Commands;
+namespace ScreenDriver.Controller.Commands;
 
 /// <summary>
 /// Serializes screen commands so concurrent producers cannot interleave bytes on the serial port.

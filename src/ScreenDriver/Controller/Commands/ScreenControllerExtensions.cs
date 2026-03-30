@@ -1,4 +1,6 @@
-namespace ScreenDriver.Commands;
+using ScreenDriver.Device;
+
+namespace ScreenDriver.Controller.Commands;
 
 /// <summary>
 /// Convenience methods for submitting typed commands to a ScreenController.

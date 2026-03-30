@@ -1,3 +1,4 @@
+using ScreenDriver.Rendering;
 using SkiaSharp;
 
 namespace ScreenDriver.Widgets;

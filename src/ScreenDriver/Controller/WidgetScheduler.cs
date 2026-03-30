@@ -1,7 +1,8 @@
-using ScreenDriver.Events;
+using ScreenDriver.Controller.Events;
+using ScreenDriver.Rendering;
 using ScreenDriver.Widgets;
 
-namespace ScreenDriver.Scheduler;
+namespace ScreenDriver.Controller;
 
 /// <summary>
 /// Runs a PeriodicTimer per widget, rendering frames at each widget's interval.
@@ -83,7 +84,7 @@ public sealed class WidgetScheduler
         }
         catch (Exception ex)
         {
-            _bus.Publish(new Events.Error(widget.GetType().Name, ex));
+            _bus.Publish(new Error(widget.GetType().Name, ex));
         }
     }
 }

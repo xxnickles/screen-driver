@@ -1,6 +1,6 @@
 using SkiaSharp;
 
-namespace ScreenDriver.Widgets;
+namespace ScreenDriver.Rendering;
 
 public static class RenderHelpers
 {

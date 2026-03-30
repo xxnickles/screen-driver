@@ -1,3 +1,5 @@
+using ScreenDriver.Rendering;
+
 namespace ScreenDriver.Widgets;
 
 /// <summary>

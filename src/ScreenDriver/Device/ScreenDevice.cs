@@ -1,7 +1,7 @@
-using ScreenDriver.Protocol;
-using ScreenDriver.Widgets;
+using ScreenDriver.Device.Protocol;
+using ScreenDriver.Rendering;
 
-namespace ScreenDriver;
+namespace ScreenDriver.Device;
 
 public enum ScreenOrientation
 {
@@ -62,24 +62,24 @@ public sealed class ScreenDevice : IDisposable
     {
         _connection.Open();
 
-        _connection.Write(ScreenCommand.BuildHello());
+        _connection.Write(DeviceCommand.BuildHello());
         var sizeId = _connection.ReadByte();
 
         return sizeId;
     }
 
-    public void Reset() => _connection.Write(ScreenCommand.BuildReset());
+    public void Reset() => _connection.Write(DeviceCommand.BuildReset());
 
-    public void Clear() => _connection.Write(ScreenCommand.BuildClear());
+    public void Clear() => _connection.Write(DeviceCommand.BuildClear());
 
-    public void ScreenOn() => _connection.Write(ScreenCommand.BuildScreenOn());
+    public void ScreenOn() => _connection.Write(DeviceCommand.BuildScreenOn());
 
-    public void ScreenOff() => _connection.Write(ScreenCommand.BuildScreenOff());
+    public void ScreenOff() => _connection.Write(DeviceCommand.BuildScreenOff());
 
     /// <summary>
     /// Sets brightness. 0 = maximum brightness, 255 = completely dark.
     /// </summary>
-    public void SetBrightness(byte level) => _connection.Write(ScreenCommand.BuildSetBrightness(level));
+    public void SetBrightness(byte level) => _connection.Write(DeviceCommand.BuildSetBrightness(level));
 
     /// <summary>
     /// Sets orientation. Sends the full 16-byte command with target dimensions.
@@ -88,7 +88,7 @@ public sealed class ScreenDevice : IDisposable
     public void SetOrientation(ScreenOrientation orientation)
     {
         _orientation = orientation;
-        _connection.Write(ScreenCommand.BuildSetOrientation((int)orientation, Width, Height));
+        _connection.Write(DeviceCommand.BuildSetOrientation((int)orientation, Width, Height));
     }
 
     /// <summary>
@@ -96,7 +96,7 @@ public sealed class ScreenDevice : IDisposable
     /// </summary>
     public void DisplayBitmap(int x, int y, int endX, int endY, byte[] rgb565Data)
     {
-        _connection.Write(ScreenCommand.BuildDisplayBitmap(x, y, endX, endY));
+        _connection.Write(DeviceCommand.BuildDisplayBitmap(x, y, endX, endY));
         _connection.WriteChunked(rgb565Data, ImageChunkSize);
     }
 
