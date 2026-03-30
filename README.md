@@ -55,6 +55,21 @@ dotnet publish src/ScreenDriver -c Release -r linux-x64 --self-contained -p:Publ
 ./publish/ScreenDriver
 ```
 
+## Install
+
+To install as `screenctl` and run from anywhere:
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+This publishes a self-contained binary, copies it to `~/.local/share/screenctl/`, and creates a symlink at `~/.local/bin/screenctl`. Then just run:
+
+```bash
+screenctl
+```
+
 ## Project Structure
 
 ```
