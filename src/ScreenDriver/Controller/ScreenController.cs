@@ -43,6 +43,7 @@ public sealed class ScreenController : IAsyncDisposable
     /// </summary>
     public void EnqueueCommand(ScreenCommand command) => _commandQueue.Enqueue(command);
 
+
     /// <summary>
     /// Connects to the screen (polling if not found), initializes, and starts
     /// the command queue and widget scheduler.
@@ -69,7 +70,15 @@ public sealed class ScreenController : IAsyncDisposable
 
         if (_device is not null)
         {
-            try { _device.ScreenOff(); } catch { /* device may already be gone */ }
+            try
+            {
+                _device.ScreenOff();
+            }
+            catch
+            {
+                /* device may already be gone */
+            }
+
             _device.Dispose();
             _device = null;
         }
@@ -161,7 +170,15 @@ public sealed class ScreenController : IAsyncDisposable
         _bus.Publish(new Warning("Controller", "Screen disconnected. Reconnecting..."));
 
         // Dispose old device
-        try { _device?.Dispose(); } catch { /* already gone */ }
+        try
+        {
+            _device?.Dispose();
+        }
+        catch
+        {
+            /* already gone */
+        }
+
         _device = null;
 
         // Fire-and-forget reconnect loop

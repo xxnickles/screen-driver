@@ -19,39 +19,32 @@ public class CommandPanel(ScreenController controller, ThemeRegistry registry)
                 new SelectionPrompt<string>()
                     .Title("[blue]Commands[/]")
                     .AddChoices(
-                        "Screen On",
-                        "Screen Off",
-                        "Orientation",
-                        "Theme",
-                        "Back to log"));
+                        Constants.ScreenOrientationCommand,
+                        Constants.ScreenThemeCommand,
+                        Constants.ScreenBrightnessCommand,
+                        Constants.BackCommand));
 
             switch (action)
             {
-                case "Screen On":
-                    controller.EnqueueCommand(new SetBrightnessCommand(0));
-                    AnsiConsole.MarkupLine("[green]Screen turned on.[/]");
+                case Constants.ScreenOrientationCommand:
+                    ShowOrientationMenu();
                     break;
 
-                case "Screen Off":
-                    controller.EnqueueCommand(new SetBrightnessCommand(255));
-                    AnsiConsole.MarkupLine("[green]Screen turned off.[/]");
-                    break;
-
-                case "Orientation":
-                    await ShowOrientationMenu();
-                    break;
-
-                case "Theme":
+                case Constants.ScreenThemeCommand:
                     await ShowThemeMenu();
                     break;
 
-                case "Back to log":
+                case Constants.ScreenBrightnessCommand:
+                    ShowBrightnessMenu();
+                    break;
+
+                case Constants.BackCommand:
                     return;
             }
         }
     }
 
-    private async Task ShowOrientationMenu()
+    private void ShowOrientationMenu()
     {
         var orientations = Enum.GetValues<ScreenOrientation>();
         var choice = AnsiConsole.Prompt(
@@ -59,7 +52,7 @@ public class CommandPanel(ScreenController controller, ThemeRegistry registry)
                 .Title("[blue]Select Orientation[/]")
                 .AddChoices(orientations));
 
-        controller.EnqueueCommand(new SetOrientationCommand(choice));
+        controller.SetOrientation(choice);
         AnsiConsole.MarkupLine($"[green]Orientation set to {choice}.[/]");
     }
 
@@ -88,5 +81,16 @@ public class CommandPanel(ScreenController controller, ThemeRegistry registry)
         {
             AnsiConsole.MarkupLine($"[grey]Already on '{name}'.[/]");
         }
+    }
+
+    private void ShowBrightnessMenu()
+    {
+        var choice = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[blue]Select Screen Brightness[/]")
+                .AddChoices(Constants.BrightnessOptions.Keys));
+
+        controller.SetBrightness(Constants.BrightnessOptions[choice]);
+        AnsiConsole.MarkupLine($"[green]Brightness set to {choice}.[/]");
     }
 }

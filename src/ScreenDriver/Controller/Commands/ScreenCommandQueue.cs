@@ -57,7 +57,7 @@ public sealed class ScreenCommandQueue
 
                 try
                 {
-                    Dispatch(command, device);
+                    Dispatch(command, device, _bus);
                 }
                 catch (Exception ex) when (ex is IOException or TimeoutException or ObjectDisposedException or InvalidOperationException)
                 {
@@ -72,7 +72,7 @@ public sealed class ScreenCommandQueue
         }
     }
 
-    private static void Dispatch(ScreenCommand command, ScreenDevice device)
+    private static void Dispatch(ScreenCommand command, ScreenDevice device, EventBus bus)
     {
         switch (command)
         {
@@ -85,10 +85,12 @@ public sealed class ScreenCommandQueue
 
             case SetOrientationCommand cmd:
                 device.SetOrientation(cmd.Orientation);
+                bus.Publish(new Info(nameof(ScreenCommandQueue), $"Dispatched command orientation with value: {cmd.Orientation}"));
                 break;
 
             case SetBrightnessCommand cmd:
                 device.SetBrightness(cmd.Level);
+                bus.Publish(new Info(nameof(ScreenCommandQueue), $"Dispatched command brightness with value: {cmd.Level}"));
                 break;
 
             case FillScreenCommand cmd:
