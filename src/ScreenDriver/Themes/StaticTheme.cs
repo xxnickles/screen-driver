@@ -39,17 +39,18 @@ public record StaticTheme : Theme
     private const int DiskY = 30;
 
     public StaticTheme()
-        : base(BuildWidgets())
+        : base(ScreenLayoutMode.Landscape, BuildWidgets())
     {
     }
 
     private static Widget[] BuildWidgets()
     {
+        var (width, height) = ScreenDevice.DimensionsFor(ScreenLayoutMode.Landscape);
         var dir = Path.Combine(ThemesRoot, Name);
         var fontPaths = DiscoverAll(dir, FontExtensions);
         var typeface = fontPaths.Length == 1 ? SKTypeface.FromFile(fontPaths[0]) : SKTypeface.Default;
         var background =
-            ScreenBackground.SolidColor(SKColors.Crimson, ScreenDevice.ScreenWidth, ScreenDevice.ScreenHeight);
+            ScreenBackground.SolidColor(SKColors.Crimson, width, height);
 
         return
         [

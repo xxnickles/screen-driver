@@ -1,5 +1,6 @@
 using ScreenDriver.Controller;
 using ScreenDriver.Controller.Events;
+using ScreenDriver.Device;
 using ScreenDriver.Themes;
 using ScreenDriver.Tui;
 
@@ -19,10 +20,10 @@ await using var resource = lockFile;
 
 var port = args.Length > 0 ? args[0] : null;
 
-var registry = new ThemeRegistry("default", new Dictionary<string, Func<Theme>>
+var registry = new ThemeRegistry("default", new Dictionary<string, (ScreenLayoutMode, Func<Theme>)>
 {
-    ["default"] = () => new DefaultTheme(),
-    ["static"] = () => new StaticTheme(),
+    ["default"] = (ScreenLayoutMode.Landscape, () => new DefaultTheme()),
+    ["static"] = (ScreenLayoutMode.Landscape, () => new StaticTheme()),
 });
 
 var bus = new EventBus();

@@ -59,7 +59,8 @@ public sealed class ScreenCommandQueue
                 {
                     Dispatch(command, device, _bus);
                 }
-                catch (Exception ex) when (ex is IOException or TimeoutException or ObjectDisposedException or InvalidOperationException)
+                catch (Exception ex) when (ex is IOException or TimeoutException or ObjectDisposedException
+                                               or InvalidOperationException)
                 {
                     _bus.Publish(new Error("CommandQueue", ex));
                     Disconnected?.Invoke();
@@ -74,28 +75,8 @@ public sealed class ScreenCommandQueue
 
     private static void Dispatch(ScreenCommand command, ScreenDevice device, EventBus bus)
     {
-        switch (command)
-        {
-            case DisplayBitmapCommand cmd:
-                device.DisplayBitmap(
-                    cmd.Zone.X, cmd.Zone.Y,
-                    cmd.Zone.EndX, cmd.Zone.EndY,
-                    cmd.Frame.Data);
-                break;
-
-            case SetOrientationCommand cmd:
-                device.SetOrientation(cmd.Orientation);
-                bus.Publish(new Info(nameof(ScreenCommandQueue), $"Dispatched command orientation with value: {cmd.Orientation}"));
-                break;
-
-            case SetBrightnessCommand cmd:
-                device.SetBrightness(cmd.Level);
-                bus.Publish(new Info(nameof(ScreenCommandQueue), $"Dispatched command brightness with value: {cmd.Level}"));
-                break;
-
-            case FillScreenCommand cmd:
-                device.FillScreen(cmd.R, cmd.G, cmd.B);
-                break;
-        }
+        command.Execute(device);
+        if (command is NotifiableCommand notifiableCommand)
+            bus.Publish(notifiableCommand.Event);
     }
 }

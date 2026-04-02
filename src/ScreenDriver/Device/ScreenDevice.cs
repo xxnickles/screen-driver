@@ -11,6 +11,13 @@ public enum ScreenOrientation
     ReverseLandscape = 3
 }
 
+public enum ScreenLayoutMode
+{
+    Landscape,
+    Portrait
+}
+
+
 /// <summary>
 /// High-level API for the UsbMonitor 3.5" Revision A screen.
 /// </summary>
@@ -18,11 +25,7 @@ public sealed class ScreenDevice : IDisposable
 {
     public const int NativeWidth = 320;
     public const int NativeHeight = 480;
-
-    // Landscape dimensions — the fixed operating mode for this driver
-    public const int ScreenWidth = NativeHeight;  // 480
-    public const int ScreenHeight = NativeWidth;  // 320
-
+    
     // Chunk size: always based on native portrait width
     private const int ImageChunkSize = NativeWidth * 8;
 
@@ -36,6 +39,16 @@ public sealed class ScreenDevice : IDisposable
     public int Height => IsLandscape ? NativeWidth : NativeHeight;
 
     private bool IsLandscape => _orientation is ScreenOrientation.Landscape or ScreenOrientation.ReverseLandscape;
+
+    public static ScreenLayoutMode LayoutModeFor(ScreenOrientation orientation) =>
+        orientation is ScreenOrientation.Landscape or ScreenOrientation.ReverseLandscape
+            ? ScreenLayoutMode.Landscape
+            : ScreenLayoutMode.Portrait;
+
+    public static (int Width, int Height) DimensionsFor(ScreenLayoutMode layout) =>
+        layout == ScreenLayoutMode.Landscape
+            ? (NativeHeight, NativeWidth)   // 480 x 320
+            : (NativeWidth, NativeHeight);  // 320 x 480
 
     public ScreenDevice(string portName)
     {

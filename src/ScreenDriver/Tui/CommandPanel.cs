@@ -1,5 +1,5 @@
 using ScreenDriver.Controller;
-using ScreenDriver.Controller.Commands;
+using ScreenDriver.Controller.Static;
 using ScreenDriver.Device;
 using ScreenDriver.Themes;
 using Spectre.Console;
@@ -27,7 +27,7 @@ public class CommandPanel(ScreenController controller, ThemeRegistry registry)
             switch (action)
             {
                 case Constants.ScreenOrientationCommand:
-                    ShowOrientationMenu();
+                    await ShowOrientationMenu();
                     break;
 
                 case Constants.ScreenThemeCommand:
@@ -44,7 +44,7 @@ public class CommandPanel(ScreenController controller, ThemeRegistry registry)
         }
     }
 
-    private void ShowOrientationMenu()
+    private async Task ShowOrientationMenu()
     {
         var orientations = Enum.GetValues<ScreenOrientation>();
         var choice = AnsiConsole.Prompt(
@@ -52,7 +52,7 @@ public class CommandPanel(ScreenController controller, ThemeRegistry registry)
                 .Title("[blue]Select Orientation[/]")
                 .AddChoices(orientations));
 
-        controller.SetOrientation(choice);
+        await controller.SetOrientation(choice);
         AnsiConsole.MarkupLine($"[green]Orientation set to {choice}.[/]");
     }
 

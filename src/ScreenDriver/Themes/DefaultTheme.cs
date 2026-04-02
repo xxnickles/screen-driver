@@ -33,15 +33,16 @@ public record DefaultTheme : Theme
     private const string NetworkSizeText = "999.9 MB/s";
 
     public DefaultTheme()
-        : base(BuildWidgets()) { }
+        : base(ScreenLayoutMode.Landscape, BuildWidgets()) { }
 
     private static Widget[] BuildWidgets()
     {
+        var (width, height) = ScreenDevice.DimensionsFor(ScreenLayoutMode.Landscape);
         var dir = Path.Combine(ThemesRoot, Name);
         var imagePath = DiscoverSingle(dir, ImageExtensions);
         var fontPaths = DiscoverAll(dir, FontExtensions);
         var typeface = fontPaths.Length == 1 ? SKTypeface.FromFile(fontPaths[0]) : SKTypeface.Default;
-        var background = ScreenBackground.FromImage(imagePath, ScreenDevice.ScreenWidth, ScreenDevice.ScreenHeight);
+        var background = ScreenBackground.FromImage(imagePath, width, height);
 
         return
         [

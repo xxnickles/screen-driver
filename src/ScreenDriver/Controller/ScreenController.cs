@@ -23,6 +23,7 @@ public sealed class ScreenController : IAsyncDisposable
     private ScreenDevice? _device;
     private volatile bool _reconnecting;
     private string _activeTheme;
+    private ScreenOrientation _activeOrientation = ScreenOrientation.Landscape;
 
     public string ActiveTheme => _activeTheme;
 
@@ -88,6 +89,46 @@ public sealed class ScreenController : IAsyncDisposable
     }
 
     public async ValueTask DisposeAsync() => await Stop();
+
+    /// <summary>
+    /// Changes the screen orientation. If the active theme doesn't support the
+    /// target layout mode, publishes an error and fills the screen black.
+    /// Otherwise stops the scheduler, sends the orientation command, rebuilds
+    /// the theme, and restarts the scheduler.
+    /// </summary>
+    public async Task SetOrientation(ScreenOrientation orientation)
+    {
+        if (_cts is null) return;
+
+        if (orientation == _activeOrientation)
+        {
+            _bus.Publish(new Info("Controller", $"Already in {orientation} orientation."));
+            return;
+        }
+
+        var layout = ScreenDevice.LayoutModeFor(orientation);
+
+        // Scheduler should be stopped before changing orientation, screen should be cleared
+        await _scheduler.Stop();
+        EnqueueCommand(new ClearScreenCommand());
+
+        if (!_registry.GetThemesForLayout(layout).Contains(_activeTheme))
+        {
+            _bus.Publish(new Error("Controller",
+                new InvalidOperationException($"No '{_activeTheme}' theme available for {layout}")));
+            EnqueueCommand(new FillScreenCommand(255, 0, 0));
+            return;
+        }
+
+        EnqueueCommand(new SetOrientationCommand(orientation));
+       
+
+        _scheduler = CreateScheduler(_registry.Build(_activeTheme));
+        _scheduler.Start(_cts.Token);
+        _activeOrientation = orientation;
+
+        _bus.Publish(new Info("Controller", $"Orientation changed to {orientation}."));
+    }
 
     /// <summary>
     /// Hot-swaps the active theme. Stops the scheduler, builds the new theme,
