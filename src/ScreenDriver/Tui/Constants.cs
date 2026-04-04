@@ -5,6 +5,8 @@ internal static class Constants
     internal const string ScreenOrientationCommand = "Orientation";
     internal const string ScreenBrightnessCommand = "Brightness";
     internal const string ScreenThemeCommand = "Theme";
+    internal const string ScreenOnCommand = "Screen On";
+    internal const string ScreenOffCommand = "Screen Off";
     internal const string BackCommand = "Back to log";
 
     //Brightness

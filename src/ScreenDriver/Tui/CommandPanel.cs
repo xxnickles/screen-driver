@@ -19,6 +19,8 @@ public class CommandPanel(ScreenController controller, ThemeRegistry registry)
                 new SelectionPrompt<string>()
                     .Title("[blue]Commands[/]")
                     .AddChoices(
+                        Constants.ScreenOnCommand,
+                        Constants.ScreenOffCommand,
                         Constants.ScreenOrientationCommand,
                         Constants.ScreenThemeCommand,
                         Constants.ScreenBrightnessCommand,
@@ -26,6 +28,16 @@ public class CommandPanel(ScreenController controller, ThemeRegistry registry)
 
             switch (action)
             {
+                case Constants.ScreenOnCommand:
+                    controller.TurnScreenOn();
+                    AnsiConsole.MarkupLine("[green]Screen turned on.[/]");
+                    break;
+
+                case Constants.ScreenOffCommand:
+                    controller.TurnScreenOff();
+                    AnsiConsole.MarkupLine("[green]Screen turned off.[/]");
+                    break;
+
                 case Constants.ScreenOrientationCommand:
                     await ShowOrientationMenu();
                     break;
