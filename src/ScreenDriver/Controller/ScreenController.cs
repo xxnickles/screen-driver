@@ -23,19 +23,28 @@ public sealed class ScreenController : IAsyncDisposable
     private ScreenDevice? _device;
     private volatile bool _reconnecting;
     private string _activeTheme;
-    private ScreenOrientation _activeOrientation = ScreenOrientation.Landscape;
+    private ScreenOrientation _activeOrientation;
+    private readonly Dictionary<ScreenLayoutMode, string> _lastThemePerLayout = new();
 
     public string ActiveTheme => _activeTheme;
 
-    public ScreenController(ThemeRegistry registry, EventBus bus, string? port = null)
+    public ScreenController(
+        ThemeRegistry registry,
+        EventBus bus,
+        ScreenLayoutMode startLayout = ScreenLayoutMode.Landscape,
+        string? port = null)
     {
         _fixedPort = port;
         _registry = registry;
-        _activeTheme = registry.DefaultThemeName;
+        _activeOrientation = startLayout is ScreenLayoutMode.Landscape
+            ? ScreenOrientation.Landscape
+            : ScreenOrientation.Portrait;
+        _activeTheme = registry.GetPreferredTheme(startLayout);
+        _lastThemePerLayout[startLayout] = _activeTheme;
         _bus = bus;
         _commandQueue = new ScreenCommandQueue(() => _device, bus);
         _commandQueue.Disconnected += OnDisconnect;
-        _scheduler = CreateScheduler(registry.BuildDefault());
+        _scheduler = CreateScheduler(registry.Build(_activeTheme));
     }
 
     /// <summary>
@@ -108,26 +117,27 @@ public sealed class ScreenController : IAsyncDisposable
 
         var layout = ScreenDevice.LayoutModeFor(orientation);
 
+        // Remember current theme for the current layout before switching
+        var currentLayout = ScreenDevice.LayoutModeFor(_activeOrientation);
+        _lastThemePerLayout[currentLayout] = _activeTheme;
+
+        // Pick theme for the target layout: last-used > preferred
+        var targetTheme = _lastThemePerLayout.TryGetValue(layout, out var last)
+            ? last
+            : _registry.GetPreferredTheme(layout);
+
         // Scheduler should be stopped before changing orientation, screen should be cleared
         await _scheduler.Stop();
         EnqueueCommand(new ClearScreenCommand());
-
-        if (!_registry.GetThemesForLayout(layout).Contains(_activeTheme))
-        {
-            _bus.Publish(new Error("Controller",
-                new InvalidOperationException($"No '{_activeTheme}' theme available for {layout}")));
-            EnqueueCommand(new FillScreenCommand(255, 0, 0));
-            return;
-        }
-
         EnqueueCommand(new SetOrientationCommand(orientation));
-       
 
-        _scheduler = CreateScheduler(_registry.Build(_activeTheme));
+        _activeTheme = targetTheme;
+        _lastThemePerLayout[layout] = targetTheme;
+        _scheduler = CreateScheduler(_registry.Build(targetTheme));
         _scheduler.Start(_cts.Token);
         _activeOrientation = orientation;
 
-        _bus.Publish(new Info("Controller", $"Orientation changed to {orientation}."));
+        _bus.Publish(new Info("Controller", $"Orientation changed to {orientation}, theme: '{targetTheme}'."));
     }
 
     /// <summary>
@@ -155,6 +165,7 @@ public sealed class ScreenController : IAsyncDisposable
         _scheduler = CreateScheduler(theme);
         _scheduler.Start(_cts.Token);
         _activeTheme = name;
+        _lastThemePerLayout[ScreenDevice.LayoutModeFor(_activeOrientation)] = name;
 
         _bus.Publish(new Info("Controller", $"Theme switched to '{name}'."));
     }
@@ -185,7 +196,7 @@ public sealed class ScreenController : IAsyncDisposable
                     _bus.Publish(new Info("Controller", $"Screen connected on {port} (size ID: 0x{sizeId:X2})"));
 
                     device.SetBrightness(0);
-                    device.SetOrientation(ScreenOrientation.Landscape);
+                    device.SetOrientation(_activeOrientation);
                     device.FillScreen(0, 0, 0);
 
                     _device = device;

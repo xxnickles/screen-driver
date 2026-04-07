@@ -4,20 +4,29 @@ namespace ScreenDriver.Themes;
 
 public class ThemeRegistry
 {
-    public string DefaultThemeName { get; }
     private Dictionary<string, (ScreenLayoutMode Layout, Func<Theme> Factory)> AvailableThemes { get; }
+    private Dictionary<ScreenLayoutMode, string> PreferredThemes { get; }
 
-    public ThemeRegistry(string defaultThemeName, Dictionary<string, (ScreenLayoutMode Layout, Func<Theme> Factory)> availableThemes)
+    public ThemeRegistry(
+        Dictionary<string, (ScreenLayoutMode Layout, Func<Theme> Factory)> availableThemes,
+        Dictionary<ScreenLayoutMode, string> preferredThemes)
     {
-        if (!availableThemes.ContainsKey(defaultThemeName))
-            throw new ArgumentException(
-                $"Theme '{defaultThemeName}' is not present in the available themes.");
+        foreach (var (layout, name) in preferredThemes)
+        {
+            if (!availableThemes.TryGetValue(name, out var entry))
+                throw new ArgumentException($"Preferred theme '{name}' is not present in the available themes.");
+            if (entry.Layout != layout)
+                throw new ArgumentException($"Preferred theme '{name}' is registered for {entry.Layout}, not {layout}.");
+        }
 
         AvailableThemes = availableThemes;
-        DefaultThemeName = defaultThemeName;
+        PreferredThemes = preferredThemes;
     }
 
-    public Theme BuildDefault() => AvailableThemes[DefaultThemeName].Factory();
+    public string GetPreferredTheme(ScreenLayoutMode layout) =>
+        PreferredThemes.TryGetValue(layout, out var name)
+            ? name
+            : GetThemesForLayout(layout).First();
 
     public Theme Build(string name) =>
         AvailableThemes.TryGetValue(name, out var entry)

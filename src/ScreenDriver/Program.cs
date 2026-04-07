@@ -20,15 +20,26 @@ await using var resource = lockFile;
 
 var port = args.Length > 0 ? args[0] : null;
 
-var registry = new ThemeRegistry("default", new Dictionary<string, (ScreenLayoutMode, Func<Theme>)>
-{
-    ["default"] = (ScreenLayoutMode.Landscape, () => new DefaultTheme()),
-    ["static"] = (ScreenLayoutMode.Landscape, () => new StaticTheme()),
-});
+var registry = new ThemeRegistry(
+    new Dictionary<string, (ScreenLayoutMode, Func<Theme>)>
+    {
+        ["band-maid"] = (ScreenLayoutMode.Landscape, () => new BandMaidTheme()),
+        ["static"] = (ScreenLayoutMode.Landscape, () => new StaticTheme()),
+        ["eva"] = (ScreenLayoutMode.Portrait, () => new EvaTheme()),
+    },
+    new Dictionary<ScreenLayoutMode, string>
+    {
+        [ScreenLayoutMode.Landscape] = "band-maid",
+        [ScreenLayoutMode.Portrait] = "eva",
+    });
 
 var bus = new EventBus();
 
-await using var controller = new ScreenController(registry, bus, port);
+await using var controller = new ScreenController(
+    registry, 
+    bus,
+    ScreenLayoutMode.Landscape, 
+    port);
 
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) =>

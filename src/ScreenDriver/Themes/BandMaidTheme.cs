@@ -6,9 +6,9 @@ using static ScreenDriver.Themes.ThemeHelpers;
 
 namespace ScreenDriver.Themes;
 
-public record DefaultTheme : Theme
+public record BandMaidTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets())
 {
-    private const string Name = "default";
+    private const string Name = "band-maid";
 
     // Font sizes
     private const float UsageFontSize = 34f;
@@ -31,9 +31,6 @@ public record DefaultTheme : Theme
     private const string DiskSizeText = "9999 / 9999 GB";
     private const string MemorySizeText = "99999 / 99999 MB";
     private const string NetworkSizeText = "999.9 MB/s";
-
-    public DefaultTheme()
-        : base(ScreenLayoutMode.Landscape, BuildWidgets()) { }
 
     private static Widget[] BuildWidgets()
     {

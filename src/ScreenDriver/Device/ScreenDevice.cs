@@ -23,8 +23,8 @@ public enum ScreenLayoutMode
 /// </summary>
 public sealed class ScreenDevice : IDisposable
 {
-    public const int NativeWidth = 320;
-    public const int NativeHeight = 480;
+    private const int NativeWidth = 320;
+    private const int NativeHeight = 480;
     
     // Chunk size: always based on native portrait width
     private const int ImageChunkSize = NativeWidth * 8;

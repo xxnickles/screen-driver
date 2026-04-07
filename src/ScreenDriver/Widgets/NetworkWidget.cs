@@ -12,6 +12,7 @@ public record NetworkWidget : Widget
     private readonly SKColor _color;
     private readonly NetworkDirection _direction;
     private readonly SKBitmap _backgroundSlice;
+    private readonly bool _fixedUnits;
 
     // Interface probe state
     private string? _activeInterface;
@@ -29,13 +30,15 @@ public record NetworkWidget : Widget
         SKTypeface typeface,
         float fontSize,
         SKColor color,
-        NetworkDirection direction) : base(zone, interval)
+        NetworkDirection direction,
+        bool fixedUnits = false) : base(zone, interval)
     {
         _typeface = typeface;
         _fontSize = fontSize;
         _color = color;
         _direction = direction;
         _backgroundSlice = background.CropZone(Zone);
+        _fixedUnits = fixedUnits;
     }
 
     public override Rgb565Frame Render()
@@ -45,7 +48,7 @@ public record NetworkWidget : Widget
 
         var (downSpeed, upSpeed) = ReadSpeed();
         var speed = _direction == NetworkDirection.Down ? downSpeed : upSpeed;
-        var text = FormatSpeed(speed);
+        var text = FormatSpeed(speed, _fixedUnits);
 
         var y = RenderHelpers.GetAscent(_typeface, _fontSize);
         RenderHelpers.DrawText(canvas, text, _typeface, _fontSize, _color,
@@ -126,8 +129,12 @@ public record NetworkWidget : Widget
         return null;
     }
 
-    private static string FormatSpeed(double bytesPerSec)
+    private static string FormatSpeed(double bytesPerSec, bool fixedUnits = false)
     {
+        if(fixedUnits)
+            return $"{bytesPerSec / 1_000_000:F1}";
+                
+        
         return bytesPerSec switch
         {
             >= 1_000_000_000 => $"{bytesPerSec / 1_000_000_000:F1} GB/s",

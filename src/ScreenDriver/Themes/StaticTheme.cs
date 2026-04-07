@@ -6,7 +6,7 @@ using static ScreenDriver.Themes.ThemeHelpers;
 
 namespace ScreenDriver.Themes;
 
-public record StaticTheme : Theme
+public record StaticTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets())
 {
     private const string Name = "static";
 
@@ -37,11 +37,6 @@ public record StaticTheme : Theme
 
     // Disk Y
     private const int DiskY = 30;
-
-    public StaticTheme()
-        : base(ScreenLayoutMode.Landscape, BuildWidgets())
-    {
-    }
 
     private static Widget[] BuildWidgets()
     {

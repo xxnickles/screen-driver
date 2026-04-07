@@ -46,6 +46,43 @@ public static class RenderHelpers
         canvas.DrawRect(0, 0, width - 1, height - 1, borderPaint);
     }
 
+    public static void DrawRadialGauge(
+        SKCanvas canvas,
+        double percent,
+        SKColor fillColor,
+        float width,
+        float height,
+        float radius,
+        float strokeWidth,
+        SKColor? trackColor = null)
+    {
+        var value = Math.Clamp(percent, 0, 100);
+        var cx = width / 2f;
+        var cy = height / 2f;
+        var rect = new SKRect(cx - radius, cy - radius, cx + radius, cy + radius);
+
+        if (trackColor is { } track)
+        {
+            using var trackPaint = new SKPaint();
+            trackPaint.Color = track;
+            trackPaint.Style = SKPaintStyle.Stroke;
+            trackPaint.StrokeWidth = strokeWidth;
+            trackPaint.StrokeCap = SKStrokeCap.Round;
+            trackPaint.IsAntialias = true;
+            canvas.DrawArc(rect, 0, 360, false, trackPaint);
+        }
+
+        var sweepAngle = (float)(value / 100.0 * 360.0);
+
+        using var fillPaint = new SKPaint();
+        fillPaint.Color = fillColor;
+        fillPaint.Style = SKPaintStyle.Stroke;
+        fillPaint.StrokeWidth = strokeWidth;
+        fillPaint.StrokeCap = SKStrokeCap.Round;
+        fillPaint.IsAntialias = true;
+        canvas.DrawArc(rect, -90, sweepAngle, false, fillPaint);
+    }
+
     public static float MeasureText(string text, SKTypeface typeface, float size, out float lineHeight)
     {
         using var font = new SKFont(typeface, size);
