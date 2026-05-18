@@ -15,7 +15,7 @@ public record BandMaidTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets()
     private const float TempFontSize = 18f;
     private const float DiskLabelFontSize = 16f;
     private const float DiskValueFontSize = 14f;
-    private const float MemoryFontSize = 17f;
+    private const float MemoryFontSize = 14f;
     private const float NetworkFontSize = 13f;
 
     // Colors
@@ -92,13 +92,24 @@ public record BandMaidTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets()
 
             // Memory panel (middle, wide)
             new MemoryBarWidget(
-                new WidgetZone(115, 195, 140, 15),
+                new WidgetZone(40, 205, 75, 15),
                 TimeSpan.FromSeconds(5),
                 background,
                 MemoryBarFillColor, MemoryBarTrackColor),
-
+            
             new MemoryTextWidget(
-                ComputeZone(190, 220, MemorySizeText, MemoryFontSize, typeface),
+                ComputeZone(78, 230, MemorySizeText, MemoryFontSize, typeface),
+                TimeSpan.FromSeconds(5),
+                background, typeface, MemoryFontSize, PrimaryColor),
+            
+            new GpuMemoryBarWidget(
+                new WidgetZone(200, 205, 75, 15),
+                TimeSpan.FromSeconds(5),
+                background,
+                MemoryBarFillColor, MemoryBarTrackColor),
+            
+            new GpuMemoryTextWidget(
+                ComputeZone(237, 230, MemorySizeText, MemoryFontSize, typeface),
                 TimeSpan.FromSeconds(5),
                 background, typeface, MemoryFontSize, PrimaryColor),
 
