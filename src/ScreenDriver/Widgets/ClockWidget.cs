@@ -12,11 +12,10 @@ public record ClockWidget : Widget
 
     public ClockWidget(
         WidgetZone zone,
-        TimeSpan interval,
         ScreenBackground background,
         SKTypeface typeface,
         float fontSize,
-        SKColor color) : base(zone, interval)
+        SKColor color) : base(zone, TimeSpan.FromMinutes(1))
     {
         _typeface = typeface;
         _fontSize = fontSize;

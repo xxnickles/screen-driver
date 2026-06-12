@@ -37,7 +37,6 @@ public record EvaTheme() : Theme(ScreenLayoutMode.Portrait, BuildWidgets())
 
             // Clock
             new ClockWidget(ComputeZone(120, 20, "00:00", 32f, typeface),
-                TimeSpan.FromSeconds(3),
                 background, typeface, 32f, PrimaryColor),
 
 

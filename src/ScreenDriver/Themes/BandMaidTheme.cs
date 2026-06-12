@@ -127,8 +127,7 @@ public record BandMaidTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets()
                 NetworkDirection.Up),
             
             // Clock
-            new ClockWidget(ComputeZone(400, 180, "00:00", TempFontSize, typeface), 
-                TimeSpan.FromSeconds(3),
+            new ClockWidget(ComputeZone(400, 180, "00:00", TempFontSize, typeface),
                 background, typeface, TempFontSize, PrimaryColor)
         ];
     }

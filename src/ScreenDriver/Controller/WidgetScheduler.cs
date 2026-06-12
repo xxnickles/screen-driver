@@ -5,9 +5,11 @@ using ScreenDriver.Widgets;
 namespace ScreenDriver.Controller;
 
 /// <summary>
-/// Runs a PeriodicTimer per widget, rendering frames at each widget's interval.
+/// Runs a render loop per widget, ticking aligned to each widget's interval boundary
+/// (cron-like: a 1-minute widget updates on the minute, not at an arbitrary phase).
+/// The delay to the next boundary is recomputed every tick, so it self-corrects drift.
 /// Fires FrameRendered when a widget produces a new frame.
-/// StopAsync/Start lifecycle: stopping cancels all timers, starting recreates them.
+/// StopAsync/Start lifecycle: stopping cancels all loops, starting recreates them.
 /// All widgets re-render immediately on start, ensuring backgrounds and state are fresh.
 /// </summary>
 public sealed class WidgetScheduler
@@ -57,15 +59,14 @@ public sealed class WidgetScheduler
         var name = widget.GetType().Name;
         _bus.Publish(new Info(name, "started"));
 
-        using var timer = new PeriodicTimer(widget.Interval);
-
-        // Render immediately on first tick
+        // Render immediately on start
         EmitRender(widget);
 
         try
         {
-            while (await timer.WaitForNextTickAsync(ct))
+            while (!ct.IsCancellationRequested)
             {
+                await Task.Delay(DelayToNextBoundary(widget.Interval), ct);
                 EmitRender(widget);
             }
         }
@@ -73,6 +74,18 @@ public sealed class WidgetScheduler
         {
             _bus.Publish(new Info(name, "stopped"));
         }
+    }
+
+    /// <summary>
+    /// Time from now until the next interval boundary, measured against the start of the day
+    /// (e.g. a 1-minute interval lands on each :00 second). Recomputed each tick to absorb
+    /// render and scheduling jitter so ticks stay aligned over long runs.
+    /// </summary>
+    private static TimeSpan DelayToNextBoundary(TimeSpan interval)
+    {
+        long step = interval.Ticks;
+        long sinceMidnight = DateTime.Now.TimeOfDay.Ticks;
+        return TimeSpan.FromTicks(step - (sinceMidnight % step));
     }
 
     private void EmitRender(Widget widget)
