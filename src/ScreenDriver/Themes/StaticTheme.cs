@@ -51,7 +51,7 @@ public record StaticTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets())
         [
             new BackgroundWidget(background),
 
-            new DateWidget(ComputeZone(70, 15, "12/31/9999", TimesFontSize, typeface), TimeSpan.FromHours(1),
+            new DateWidget(ComputeZone(70, 15, "12/31/9999", TimesFontSize, typeface), 
                 background, typeface, TimesFontSize, PrimaryColor),
             
             new ClockWidget(ComputeZone(435, 15, "23:59", TimesFontSize, typeface),
