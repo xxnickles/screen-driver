@@ -5,9 +5,9 @@ using ScreenDriver.Widgets;
 namespace ScreenDriver.Controller;
 
 /// <summary>
-/// Runs a render loop per widget, ticking aligned to each widget's interval boundary
+/// Runs a render loop per widget. Most widgets tick at a steady cadence of their Interval;
+/// <see cref="ScreenDriver.Widgets.ScheduledWidget"/>s instead align to interval boundaries
 /// (cron-like: a 1-minute widget updates on the minute, not at an arbitrary phase).
-/// The delay to the next boundary is recomputed every tick, so it self-corrects drift.
 /// Fires FrameRendered when a widget produces a new frame.
 /// StopAsync/Start lifecycle: stopping cancels all loops, starting recreates them.
 /// All widgets re-render immediately on start, ensuring backgrounds and state are fresh.
@@ -66,7 +66,10 @@ public sealed class WidgetScheduler
         {
             while (!ct.IsCancellationRequested)
             {
-                await Task.Delay(DelayToNextBoundary(widget.Interval), ct);
+                // Scheduled widgets align to interval boundaries; everything else ticks at a
+                // steady cadence (a fixed gap that delta-based meters depend on).
+                var delay = widget is ScheduledWidget scheduled ? scheduled.NextDelay() : widget.Interval;
+                await Task.Delay(delay, ct);
                 EmitRender(widget);
             }
         }
@@ -74,18 +77,6 @@ public sealed class WidgetScheduler
         {
             _bus.Publish(new Info(name, "stopped"));
         }
-    }
-
-    /// <summary>
-    /// Time from now until the next interval boundary, measured against the start of the day
-    /// (e.g. a 1-minute interval lands on each :00 second). Recomputed each tick to absorb
-    /// render and scheduling jitter so ticks stay aligned over long runs.
-    /// </summary>
-    private static TimeSpan DelayToNextBoundary(TimeSpan interval)
-    {
-        long step = interval.Ticks;
-        long sinceMidnight = DateTime.Now.TimeOfDay.Ticks;
-        return TimeSpan.FromTicks(step - (sinceMidnight % step));
     }
 
     private void EmitRender(Widget widget)

@@ -3,7 +3,7 @@ using SkiaSharp;
 
 namespace ScreenDriver.Widgets;
 
-public record DateWidget : Widget
+public record DateWidget : ScheduledWidget
 {
     private readonly SKTypeface _typeface;
     private readonly float _fontSize;
