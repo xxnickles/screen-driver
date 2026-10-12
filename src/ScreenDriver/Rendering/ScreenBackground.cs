@@ -58,7 +58,8 @@ public class ScreenBackground
         using var canvas = new SKCanvas(cropped);
         canvas.DrawBitmap(_bitmap,
             SKRect.Create(zone.X, zone.Y, zone.Width, zone.Height),
-            SKRect.Create(0, 0, zone.Width, zone.Height));
+            SKRect.Create(0, 0, zone.Width, zone.Height),
+            SKSamplingOptions.Default);
         return cropped;
     }
 }

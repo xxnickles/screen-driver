@@ -8,10 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SkiaSharp" Version="4.150.0" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.150.0" />
+    <PackageReference Include="SkiaSharp" Version="4.153.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.153.1" />
     <PackageReference Include="Spectre.Console" Version="0.57.2" />
-    <PackageReference Include="System.IO.Ports" Version="10.0.9" />
+    <PackageReference Include="System.IO.Ports" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup>

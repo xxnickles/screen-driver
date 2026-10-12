@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ScreenDriver.Rendering;
 using SkiaSharp;
 
@@ -187,5 +188,90 @@ public record MemoryGaugeWidget : Widget
         }
 
         return Rgb565Frame.FromBgra8888(bitmap.GetPixelSpan(), Zone.Width, Zone.Height);
+    }
+}
+
+public record RamSpeedWidget : Widget
+{
+    private readonly SKTypeface _typeface;
+    private readonly float _fontSize;
+    private readonly SKColor _color;
+    private readonly SKBitmap _backgroundSlice;
+
+    private int? _speedMts;
+    private bool _probed;
+
+    public RamSpeedWidget(
+        WidgetZone zone,
+        ScreenBackground background,
+        SKTypeface typeface,
+        float fontSize,
+        SKColor color) : base(zone, Timeout.InfiniteTimeSpan)
+    {
+        _typeface = typeface;
+        _fontSize = fontSize;
+        _color = color;
+        _backgroundSlice = background.CropZone(Zone);
+    }
+
+    public override Rgb565Frame Render()
+    {
+        using var bitmap = _backgroundSlice.Copy();
+        using var canvas = new SKCanvas(bitmap);
+
+        var speed = ReadConfiguredSpeed();
+        var text = speed is null ? "-- MT/s" : $"{speed} MT/s";
+
+        var y = RenderHelpers.GetAscent(_typeface, _fontSize);
+        RenderHelpers.DrawText(canvas, text, _typeface, _fontSize, _color,
+            Zone.Width / 2f, y);
+
+        return Rgb565Frame.FromBgra8888(bitmap.GetPixelSpan(), Zone.Width, Zone.Height);
+    }
+
+    // SMBIOS type 17 is root-only; udev parses it at boot and exposes it unprivileged.
+    private int? ReadConfiguredSpeed()
+    {
+        if (_probed) return _speedMts;
+        _probed = true;
+
+        try
+        {
+            var psi = new ProcessStartInfo("udevadm")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+            };
+            foreach (var arg in new[] { "info", "--query=property", "--path=/sys/class/dmi/id" })
+                psi.ArgumentList.Add(arg);
+
+            using var process = Process.Start(psi)
+                ?? throw new InvalidOperationException("udevadm failed to start");
+            var output = process.StandardOutput.ReadToEndAsync();
+            if (!process.WaitForExit(TimeSpan.FromSeconds(2)))
+            {
+                process.Kill();
+                throw new TimeoutException("udevadm timed out");
+            }
+
+            foreach (var line in output.Result.Split('\n'))
+            {
+                if (!line.StartsWith("MEMORY_DEVICE_")) continue;
+
+                var eq = line.IndexOf('=');
+                if (eq < 0 || !line.AsSpan(0, eq).EndsWith("_CONFIGURED_SPEED_MTS")) continue;
+
+                if (int.TryParse(line.AsSpan(eq + 1), out var mts) && mts > 0)
+                    return _speedMts = mts;
+            }
+
+            EventRaised?.Invoke("RAM speed not reported by udev");
+        }
+        catch (Exception ex)
+        {
+            EventRaised?.Invoke($"RAM speed read failed: {ex.Message}");
+        }
+
+        return null;
     }
 }

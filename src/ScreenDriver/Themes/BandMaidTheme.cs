@@ -20,9 +20,9 @@ public record BandMaidTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets()
 
     // Colors
     private static readonly SKColor PrimaryColor = SKColors.White;
-    private static readonly SKColor DiskLabelColor = new (253,89,88);
+    private static readonly SKColor DiskLabelColor = new(253, 89, 88);
     private static readonly SKColor DiskValueColor = SKColors.White;
-    private static readonly SKColor MemoryBarFillColor =  new (7,108,224);
+    private static readonly SKColor MemoryBarFillColor = new(7, 108, 224);
     private static readonly SKColor MemoryBarTrackColor = SKColors.White;
 
     // Sizing reference texts
@@ -47,43 +47,44 @@ public record BandMaidTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets()
 
             // CPU panel (top-left)
             new CpuUsageWidget(
-                ComputeZone(75, 80, UsageSizeText, UsageFontSize, typeface),
+                ComputeZone(75, 60, UsageSizeText, UsageFontSize, typeface),
                 TimeSpan.FromSeconds(2),
                 background, typeface, UsageFontSize, PrimaryColor),
 
             new CpuTempWidget(
-                ComputeZone(75, 130, TempSizeText, TempFontSize, typeface),
+                ComputeZone(75, 110, TempSizeText, TempFontSize, typeface),
                 TimeSpan.FromSeconds(2),
                 background, typeface, TempFontSize, PrimaryColor),
 
             // GPU panel (top-right)
             new GpuUsageWidget(
-                ComputeZone(240, 80, UsageSizeText, UsageFontSize, typeface),
+                ComputeZone(240, 60, UsageSizeText, UsageFontSize, typeface),
                 TimeSpan.FromSeconds(2),
                 background, typeface, UsageFontSize, PrimaryColor),
 
             new GpuTempWidget(
-                ComputeZone(240, 130, TempSizeText, TempFontSize, typeface),
+                ComputeZone(240, 110, TempSizeText, TempFontSize, typeface),
                 TimeSpan.FromSeconds(2),
                 background, typeface, TempFontSize, PrimaryColor),
 
             // Drives panel (right side, one widget per drive)
             new DiskWidget(
-                DiskWidget.ComputeZone(400, 20, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
+                DiskWidget.ComputeZone(400, 15, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
                 TimeSpan.FromMinutes(5),
                 background, typeface,
                 labelFontSize: DiskLabelFontSize, valueFontSize: DiskValueFontSize,
                 labelColor: DiskLabelColor, valueColor: DiskValueColor,
                 driveIndex: 0),
+
             new DiskWidget(
-                DiskWidget.ComputeZone(400, 65, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
+                DiskWidget.ComputeZone(400, 60, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
                 TimeSpan.FromMinutes(5),
                 background, typeface,
                 labelFontSize: DiskLabelFontSize, valueFontSize: DiskValueFontSize,
                 labelColor: DiskLabelColor, valueColor: DiskValueColor,
                 driveIndex: 1),
             new DiskWidget(
-                DiskWidget.ComputeZone(400, 110, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
+                DiskWidget.ComputeZone(400, 105, typeface, DiskLabelFontSize, DiskValueFontSize, DiskSizeText),
                 TimeSpan.FromMinutes(5),
                 background, typeface,
                 labelFontSize: DiskLabelFontSize, valueFontSize: DiskValueFontSize,
@@ -92,25 +93,32 @@ public record BandMaidTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets()
 
             // Memory panel (middle, wide)
             new MemoryBarWidget(
-                new WidgetZone(40, 205, 75, 15),
+                new WidgetZone(40, 180, 80, 15),
                 TimeSpan.FromSeconds(5),
                 background,
                 MemoryBarFillColor, MemoryBarTrackColor),
-            
+
             new MemoryTextWidget(
-                ComputeZone(78, 230, MemorySizeText, MemoryFontSize, typeface),
+                ComputeZone(78, 205, MemorySizeText, MemoryFontSize, typeface),
                 TimeSpan.FromSeconds(5),
                 background, typeface, MemoryFontSize, PrimaryColor),
-            
+
+            new RamSpeedWidget(ComputeZone(78, 225, MemorySizeText, MemoryFontSize, typeface), background, typeface,
+                MemoryFontSize, PrimaryColor),
+
             new GpuMemoryBarWidget(
-                new WidgetZone(200, 205, 75, 15),
+                new WidgetZone(200, 180, 80, 15),
                 TimeSpan.FromSeconds(5),
                 background,
                 MemoryBarFillColor, MemoryBarTrackColor),
-            
+
             new GpuMemoryTextWidget(
-                ComputeZone(237, 230, MemorySizeText, MemoryFontSize, typeface),
+                ComputeZone(237, 205, MemorySizeText, MemoryFontSize, typeface),
                 TimeSpan.FromSeconds(5),
+                background, typeface, MemoryFontSize, PrimaryColor),
+
+            new GpuMemoryClockWidget(
+                ComputeZone(237, 225, MemorySizeText, MemoryFontSize, typeface),
                 background, typeface, MemoryFontSize, PrimaryColor),
 
             // Network (bottom strip)
@@ -125,10 +133,13 @@ public record BandMaidTheme() : Theme(ScreenLayoutMode.Landscape, BuildWidgets()
                 TimeSpan.FromSeconds(2),
                 background, typeface, NetworkFontSize, PrimaryColor,
                 NetworkDirection.Up),
-            
+
             // Clock
-            new ClockWidget(ComputeZone(400, 180, "00:00", TempFontSize, typeface),
-                background, typeface, TempFontSize, PrimaryColor)
+            new ClockWidget(ComputeZone(400, 170, "00:00", TempFontSize, typeface),
+                background, typeface, TempFontSize, PrimaryColor),
+            new DateWidget(ComputeZone(398, 190, "00/00/0000", TempFontSize, typeface), background, typeface, MemoryFontSize,
+                PrimaryColor)
+
         ];
     }
 }

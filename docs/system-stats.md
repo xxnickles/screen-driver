@@ -9,8 +9,10 @@ How the driver collects live system metrics — what it reads, where it reads fr
 | CPU usage | `/proc/stat` | % (0–100) | Linux |
 | CPU temperature | `/sys/class/hwmon` | °C | Linux, AMD/Intel |
 | Memory usage | `/proc/meminfo` | %, MB | Linux |
+| RAM configured speed | `udevadm` (DMI type 17) | MT/s | Linux, systemd |
 | GPU usage | `/sys/class/drm` | % (0–100) | Linux, AMD only |
 | GPU temperature | `/sys/class/drm` hwmon | °C | Linux, AMD only |
+| GPU max memory clock | `/sys/class/drm` `pp_dpm_mclk` | MHz | Linux, AMD only |
 | Disk usage | `/proc/mounts` | GB | Linux |
 
 All providers return `null` (or zero-valued tuples) when the data source is unavailable — callers should always handle the "not available" case.
@@ -118,6 +120,23 @@ usedMb     = usedKb / 1024
 
 **Returns:** A tuple of `(UsedPercent, TotalMb, UsedMb)`. Returns `(0, 0, 0)` if the file cannot be read.
 
+### Configured speed
+
+The speed the BIOS actually set (e.g. after XMP/EXPO), as `dmidecode` reports it. SMBIOS tables are root-only, but systemd-udev parses them on every boot and exposes them unprivileged.
+
+**Where it reads from:** `udevadm info --query=property --path=/sys/class/dmi/id`, read **once per process**.
+
+**Example raw lines:**
+
+```
+MEMORY_DEVICE_0_SPEED_MTS=3600
+MEMORY_DEVICE_0_CONFIGURED_SPEED_MTS=3600
+```
+
+The first positive `MEMORY_DEVICE_<n>_CONFIGURED_SPEED_MTS` wins. `SPEED_MTS` is the DIMM's rated maximum and is ignored — a BIOS fallback to JEDEC shows up only in the configured value.
+
+**Returns:** Integer MT/s, or `null` if `udevadm` is missing, times out (2 s), or reports no memory devices.
+
 ---
 
 ## GPU
@@ -166,6 +185,22 @@ Same millidegrees format as CPU temperature — divide by 1000:
 ```
 
 **Returns:** Integer degrees Celsius, or `null` if no `amdgpu` hwmon sensor is found under the GPU card.
+
+### Max memory clock
+
+**Where it reads from:** `/sys/class/drm/card*/device/pp_dpm_mclk`, read **once per process**. Each line is a DPM state; `*` marks the active one.
+
+**Example raw value:**
+
+```
+0: 96Mhz
+...
+5: 1258Mhz *
+```
+
+The highest state is the max VRAM clock, including any overclock applied. This is the memory controller clock as `amdgpu` reports it, not the effective GDDR data rate.
+
+**Returns:** Integer MHz, or `null` if no card exposes `pp_dpm_mclk`.
 
 ---
 

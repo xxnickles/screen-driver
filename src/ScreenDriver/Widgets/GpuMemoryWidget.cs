@@ -196,3 +196,82 @@ public record GpuMemoryGaugeWidget : Widget
         return Rgb565Frame.FromBgra8888(bitmap.GetPixelSpan(), Zone.Width, Zone.Height);
     }
 }
+
+public record GpuMemoryClockWidget : Widget
+{
+    private readonly SKTypeface _typeface;
+    private readonly float _fontSize;
+    private readonly SKColor _color;
+    private readonly SKBitmap _backgroundSlice;
+
+    private int? _maxMhz;
+    private bool _probed;
+
+    public GpuMemoryClockWidget(
+        WidgetZone zone,
+        ScreenBackground background,
+        SKTypeface typeface,
+        float fontSize,
+        SKColor color) : base(zone, Timeout.InfiniteTimeSpan)
+    {
+        _typeface = typeface;
+        _fontSize = fontSize;
+        _color = color;
+        _backgroundSlice = background.CropZone(Zone);
+    }
+
+    public override Rgb565Frame Render()
+    {
+        using var bitmap = _backgroundSlice.Copy();
+        using var canvas = new SKCanvas(bitmap);
+
+        var clock = ReadMaxClockMhz();
+        var text = clock is null ? "-- MHz" : $"{clock} MHz";
+
+        var y = RenderHelpers.GetAscent(_typeface, _fontSize);
+        RenderHelpers.DrawText(canvas, text, _typeface, _fontSize, _color,
+            Zone.Width / 2f, y);
+
+        return Rgb565Frame.FromBgra8888(bitmap.GetPixelSpan(), Zone.Width, Zone.Height);
+    }
+
+    // pp_dpm_mclk lines look like "5: 1258Mhz *"; the highest state is the max VRAM clock.
+    private int? ReadMaxClockMhz()
+    {
+        if (_probed) return _maxMhz;
+        _probed = true;
+
+        try
+        {
+            const string drmPath = "/sys/class/drm";
+            if (!Directory.Exists(drmPath)) return null;
+
+            foreach (var cardDir in Directory.GetDirectories(drmPath, "card*"))
+            {
+                var dpmPath = Path.Combine(cardDir, "device", "pp_dpm_mclk");
+                if (!File.Exists(dpmPath)) continue;
+
+                foreach (var line in File.ReadLines(dpmPath))
+                {
+                    var colon = line.IndexOf(':');
+                    if (colon < 0) continue;
+
+                    var digits = line.AsSpan(colon + 1).TrimStart();
+                    var end = 0;
+                    while (end < digits.Length && char.IsAsciiDigit(digits[end])) end++;
+
+                    if (int.TryParse(digits[..end], out var mhz) && mhz > (_maxMhz ?? 0))
+                        _maxMhz = mhz;
+                }
+
+                return _maxMhz;
+            }
+        }
+        catch (Exception ex)
+        {
+            EventRaised?.Invoke($"GPU memory clock read failed: {ex.Message}");
+        }
+
+        return null;
+    }
+}
